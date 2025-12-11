@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArchSearch Platform - Verified Archaeological Database</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    /* General Styling */
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    .navbar {
+      background-color: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .navbar h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+    }
+    
+    .navbar-right {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .navbar-right select {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 5px;
+    }
+    
+    .navbar-right button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 5px;
+      transition: all 0.3s;
+    }
+    
+    .navbar-right button:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Tabs Styling */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.15);
+      padding: 0;
+      overflow-x: auto;
+    }
+    
+    .tab {
+      padding: 15px 25px;
+      cursor: pointer;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 600;
+      transition: all 0.3s;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    
+    .tab:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    .tab.active {
+      background-color: rgba(255, 255, 255, 0.15);
+      color: white;
+      border-bottom: 3px solid white;
+    }
+
+    /* Main Container Styling */
+    .container {
+      display: none;
+      max-width: 1000px;
+      margin: 30px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+    .container.active {
+      display: block;
+    }
+
+    /* Forms and Search Box */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    input, textarea, select {
+      width: 100%;
+      padding: 12px;
+      margin: 5px 0;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+    
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .status {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 6px;
+      background: #f8f9fa;
+    }
+    
+    .instructions {
+      font-style: italic;
+      font-size: 0.95em;
+      color: #666;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f0f4ff;
+      border-left: 4px solid #667eea;
+      border-radius: 4px;
+    }
+    
+    /* Search Results */
+    .search-result {
+      padding: 20px;
+      margin: 15px 0;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    
+    .search-result h3 {
+      margin-top: 0;
+      color: #667eea;
+    }
+    
+    .citation {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 10px;
+      font-style: italic;
+    }
+    
+    /* Approval Queue */
+    .pending-item {
+      padding: 20px;
+      margin: 15px 0;
+      border: 2px solid #ffc107;
+      border-radius: 8px;
+      background: #fff9e6;
+    }
+    
+    .pending-item h4 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .approval-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .approval-buttons button {
+      width: auto;
+      padding: 10px 20px;
+      flex: 1;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    
+    .badge-pending {
+      background: #ffc107;
+      color: #000;
+    }
+    
+    .badge-approved {
+      background: #28a745;
+      color: white;
+    }
+    
+    .badge-verified {
+      background: #17a2b8;
+      color: white;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        margin: 15px;
+        padding: 20px;
+      }
+      
+      .tabs {
+        font-size: 14px;
+      }
+      
+      .tab {
+        padding: 12px 15px;
+      }
+      
+      .navbar h1 {
+        font-size: 20px;
+      }
+    }
+    
+    /* iPad specific */
+    @media (min-width: 768px) and (max-width: 1024px) {
+      .container {
+        max-width: 90%;
+      }
+    }
+    
+    .upload-area {
+      border: 2px dashed #667eea;
+      border-radius: 8px;
+      padding: 30px;
+      text-align: center;
+      background: #f8f9ff;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .upload-area:hover {
+      background: #f0f4ff;
+      border-color: #764ba2;
+    }
+    
+    .success-message {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    
+    /* Login Screen */
+    #loginScreen {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .login-container {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 450px;
+      width: 100%;
+    }
+    
+    .login-container h1 {
+      text-align: center;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    
+    .login-container .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 0.9em;
+    }
+    
+    .login-error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      display: none;
+    }
+    
+    .demo-credentials {
+      background: #e7f3ff;
+      border: 1px solid #b3d9ff;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-size: 0.85em;
+    }
+    
+    .demo-credentials h4 {
+      margin-top: 0;
+      color: #0056b3;
+    }
+    
+    .demo-credentials code {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+    }
+    
+    .rejected-item {
+      border-color: #dc3545 !important;
+      background: #ffe6e6 !important;
+      opacity: 0.9;
+    }
+    
+    .image-search-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-block;
+      margin: 10px 0;
+      transition: all 0.3s;
+    }
+    
+    .image-search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    #mainApp {
+      display: none;
+    }
+    
+    .user-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 0.85em;
+    }
+    
+    /* Copyright Footer */
+    .copyright-footer {
+      background: rgba(0, 0, 0, 0.2);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    
+    .copyright-footer h3 {
+      margin-top: 0;
+      font-size: 1.1em;
+    }
+    
+    .disclaimer {
+      max-width: 900px;
+      margin: 20px auto;
+      font-size: 0.85em;
+      line-height: 1.6;
+      opacity: 0.9;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      border-radius: 8px;
+    }
+    
+    .disclaimer ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .disclaimer li {
+      margin: 8px 0;
+    }
+  </style>
+  <script>
+    /* State Variables and Data */
+    let currentLanguage = "en";
+    let isLoggedIn = false;
+    let currentUser = null;
+    
+    // Licensed archaeologist credentials (demo purposes)
+    const licensedArchaeologists = [
+      { username: "dr.rodriguez", password: "demo123", name: "Dr. Maria Rodriguez", license: "ARC-2024-001" },
+      { username: "dr.chen", password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
+      { username: "demo", password: "demo", name: "Demo User", license: "ARC-DEMO-001" }
+    ];
+    
+    let pendingArtifacts = [
+      {
+        id: 1,
+        name: "Ancient Mayan Calendar Stone",
+        description: "A well-preserved calendar stone from the Classic Maya period, featuring intricate glyphs and astronomical calculations.",
+        category: "Artifact",
+        uploadedBy: "Dr. Maria Rodriguez",
+        date: "2025-12-10",
+        location: "Tikal, Guatemala",
+        status: "pending",
+        images: ["https://via.placeholder.com/300x200?text=Mayan+Calendar+Stone"]
+      },
+      {
+        id: 2,
+        name: "Trilobite Fossil",
+        description: "Complete trilobite fossil from the Cambrian period, approximately 520 million years old.",
+        category: "Fossil",
+        uploadedBy: "Dr. James Chen",
+        date: "2025-12-09",
+        location: "Utah, USA",
+        status: "pending",
+        images: ["https://via.placeholder.com/300x200?text=Trilobite+Fossil"]
+      }
+    ];
+    
+    let rejectedArtifacts = [];
+    
+    let approvedArtifacts = [
+      {
+        id: 100,
+        name: "Rosetta Stone Replica",
+        description: "High-quality replica of the Rosetta Stone, featuring ancient Egyptian hieroglyphs, Demotic script, and Ancient Greek.",
+        category: "Artifact",
+        location: "British Museum, London",
+        period: "196 BCE",
+        verified: true,
+        citation: "British Museum Collection, Item EA 24",
+        images: ["https://via.placeholder.com/300x200?text=Rosetta+Stone"]
+      },
+      {
+        id: 101,
+        name: "Mesoamerican Pottery Vessel",
+        description: "A ceremonial pottery vessel with intricate designs depicting Mayan deities and creation myths.",
+        category: "Artifact",
+        location: "Copán, Honduras",
+        period: "600-900 CE",
+        verified: true,
+        citation: "Archaeological Survey of Honduras, Report 2018",
+        images: ["https://via.placeholder.com/300x200?text=Mayan+Pottery"]
+      },
+      {
+        id: 102,
+        name: "Archaeopteryx Fossil",
+        description: "Transitional fossil showing features of both dinosaurs and birds, from the Late Jurassic period.",
+        category: "Fossil",
+        location: "Bavaria, Germany",
+        period: "150 million years ago",
+        verified: true,
+        citation: "Natural History Museum, Specimen #BMNH 37001",
+        images: ["https://via.placeholder.com/300x200?text=Archaeopteryx+Fossil"]
+      },
+      {
+        id: 103,
+        name: "Granite Rock Formation",
+        description: "Common granite rock with quartz, feldspar, and mica crystals. Igneous rock formed from cooled magma.",
+        category: "Geological Sample",
+        location: "Various Locations",
+        period: "Millions of years old",
+        verified: true,
+        citation: "Geological Survey Database, Ref GEO-2024",
+        images: ["https://via.placeholder.com/300x200?text=Granite+Rock"]
+      },
+      {
+        id: 104,
+        name: "Limestone Sample",
+        description: "Sedimentary rock composed mainly of calcium carbonate. Often contains fossilized remains.",
+        category: "Geological Sample",
+        location: "Various Locations",
+        period: "Various periods",
+        verified: true,
+        citation: "Geological Survey Database, Ref GEO-2024",
+        images: ["https://via.placeholder.com/300x200?text=Limestone+Rock"]
+      }
+    ];
+    
+    const translations = {
+      en: {
+        logout: "Logout",
+        discover: "Discover Artifacts",
+        upload: "Upload Artifacts",
+        approve: "Approval Queue",
+        searchPlaceholder: "Search for artifacts (e.g., Mesoamerican Pottery, fossils, ancient texts)",
+        searchButton: "Search",
+        uploadTitle: "Upload New Artifact",
+        uploadInstructions: "Licensed archaeologists can upload artifacts here. All submissions will be reviewed by expert panel before being added to the verified database.",
+        submitButton: "Submit for Review",
+        approveButton: "Approve",
+        rejectButton: "Reject",
+        noResults: "No results found. Please try again with different keywords.",
+        excelUploadAlert: "Artifacts have been imported from Excel and added to approval queue.",
+      },
+      es: {
+        logout: "Cerrar sesión",
+        discover: "Descubrir Artefactos",
+        upload: "Subir Artefactos",
+        approve: "Cola de Aprobación",
+        searchPlaceholder: "Buscar artefactos (p. ej., cerámica mesoamericana, fósiles, textos antiguos)",
+        searchButton: "Buscar",
+        uploadTitle: "Subir Nuevo Artefacto",
+        uploadInstructions: "Los arqueólogos con licencia pueden cargar artefactos aquí. Todas las presentaciones serán revisadas por un panel de expertos antes de agregarse a la base de datos verificada.",
+        submitButton: "Enviar para Revisión",
+        approveButton: "Aprobar",
+        rejectButton: "Rechazar",
+        noResults: "No se encontraron resultados. Intente nuevamente con palabras clave diferentes.",
+        excelUploadAlert: "Se importaron artefactos desde Excel y se agregaron a la cola de aprobación.",
+      }
+    };
+
+    /* Language Switching */
+    function updateLanguage() {
+      const t = translations[currentLanguage];
+      const elements = {
+        logoutButton: t.logout,
+        discoverTabText: t.discover,
+        uploadTabText: t.upload,
+        approveTabText: t.approve,
+        uploadTitle: t.uploadTitle,
+        uploadInstructions: t.uploadInstructions,
+        uploadSubmitButton: t.submitButton
+      };
+      
+      Object.keys(elements).forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.innerText = elements[id];
+      });
+      
+      const searchInput = document.getElementById("searchInput");
+      if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+      
+      const searchButton = document.getElementById("searchButton");
+      if (searchButton) searchButton.innerText = t.searchButton;
+    }
+
+    /* Tab Switching */
+    function switchTab(tabId) {
+      // Check if trying to access restricted tabs without login
+      if ((tabId === 'uploadTab' || tabId === 'approveTab') && !isLoggedIn) {
+        alert("Please login as a licensed archaeologist to access this feature.");
+        return;
+      }
+      
+      document.querySelectorAll(".container").forEach(container => {
+        container.classList.remove("active");
+      });
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.remove("active");
+      });
+
+      const container = document.getElementById(tabId);
+      if (container) container.classList.add("active");
+      
+      const tab = document.querySelector(`[data-tab="${tabId}"]`);
+      if (tab) tab.classList.add("active");
+      
+      if (tabId === 'approveTab') {
+        displayPendingArtifacts();
+      }
+    }
+
+    /* Login Functionality */
+    function login(event) {
+      event.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const errorDiv = document.getElementById("loginError");
+      
+      const user = licensedArchaeologists.find(u => u.username === username && u.password === password);
+      
+      if (user) {
+        isLoggedIn = true;
+        currentUser = user;
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+        document.getElementById("userInfo").innerText = `${user.name} (License: ${user.license})`;
+        errorDiv.style.display = "none";
+      } else {
+        errorDiv.style.display = "block";
+        errorDiv.innerText = "Invalid credentials. Please check your username and password.";
+      }
+    }
+    
+    /* Logout Functionality */
+    function logout() {
+      if (confirm("Are you sure you want to logout?")) {
+        isLoggedIn = false;
+        currentUser = null;
+        document.getElementById("mainApp").style.display = "none";
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("loginForm").reset();
+        // Switch back to discover tab for next login
+        switchTab("discoverTab");
+      }
+    }
+
+    /* Image Search Functionality */
+    function searchByImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const resultsDiv = document.getElementById("searchResults");
+      resultsDiv.innerHTML = '<div class="status">🔍 Analyzing image using AI-powered visual recognition...</div>';
+      
+      // Simulate image analysis
+      setTimeout(() => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const imgDataUrl = e.target.result;
+          
+          // Simulate AI recognition (in real app, this would call an image recognition API)
+          const rockResults = approvedArtifacts.filter(a => 
+            a.category === "Geological Sample" || 
+            a.name.toLowerCase().includes("rock") || 
+            a.name.toLowerCase().includes("stone")
+          );
+          
+          let html = '<div style="margin-bottom: 20px;">';
+          html += '<h3>📸 Image Search Results</h3>';
+          html += '<div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">';
+          html += `<div style="flex: 0 0 300px;">`;
+          html += `<img src="${imgDataUrl}" style="width: 100%; border-radius: 8px; border: 2px solid #667eea;" />`;
+          html += '<p style="text-align: center; color: #666; margin-top: 10px;"><strong>Your Image</strong></p>';
+          html += '</div>';
+          html += '<div style="flex: 1; min-width: 300px;">';
+          html += '<p><strong>🤖 AI Analysis:</strong></p>';
+          html += '<p style="background: #f0f4ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">';
+          html += 'Based on visual analysis, this appears to be a <strong>rock or geological sample</strong>. ';
+          html += 'The image shows mineral composition, texture patterns, and color variations typical of natural stone formations. ';
+          html += 'Matching against verified database...';
+          html += '</p></div></div>';
+          
+          if (rockResults.length > 0) {
+            html += `<p style="color: #28a745; font-weight: 600;">✓ Found ${rockResults.length} potential match(es) in verified database:</p>`;
+            
+            rockResults.forEach(artifact => {
+              html += `
+                <div class="search-result">
+                  <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <img src="${artifact.images[0]}" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px;" />
+                    <div style="flex: 1; min-width: 250px;">
+                      <h3>${artifact.name} <span class="badge badge-verified">Verified ✓</span></h3>
+                      <p><strong>Description:</strong> ${artifact.description}</p>
+                      <p><strong>Category:</strong> ${artifact.category}</p>
+                      <p><strong>Period:</strong> ${artifact.period}</p>
+                      <p><strong>Location:</strong> ${artifact.location}</p>
+                      <p class="citation">📚 <strong>Citation:</strong> ${artifact.citation}</p>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+          } else {
+            html += '<p class="status">No exact matches found in the verified database.</p>';
+          }
+          
+          html += '</div>';
+          resultsDiv.innerHTML = html;
+        };
+        reader.readAsDataURL(file);
+      }, 1500);
+    }
+    
+    /* Search Functionality with AI-like Response */
+    function searchArtifacts() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      const resultsDiv = document.getElementById("searchResults");
+      resultsDiv.innerHTML = "";
+
+      if (!query) {
+        resultsDiv.innerHTML = `<p class="status">${translations[currentLanguage].noResults}</p>`;
+        return;
+      }
+
+      const matchedArtifacts = approvedArtifacts.filter(artifact => 
+        artifact.name.toLowerCase().includes(query) || 
+        artifact.description.toLowerCase().includes(query) ||
+        artifact.category.toLowerCase().includes(query)
+      );
+
+      if (matchedArtifacts.length > 0) {
+        let resultsHTML = '<div style="margin-bottom: 20px;"><h3>🔍 Search Results - Verified Data</h3>';
+        resultsHTML += `<p style="color: #666; margin-bottom: 20px;">Found ${matchedArtifacts.length} verified artifact(s) matching your query. Results are compiled from our verified archaeological database using advanced semantic search.</p>`;
+        
+        matchedArtifacts.forEach(artifact => {
+          resultsHTML += `
+            <div class="search-result">
+              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                ${artifact.images && artifact.images.length > 0 ? 
+                  `<img src="${artifact.images[0]}" style="width: 200px; height: 150px; object-fit: cover; border-radius: 8px;" />` : ''}
+                <div style="flex: 1; min-width: 250px;">
+                  <h3>${artifact.name} <span class="badge badge-verified">Verified ✓</span></h3>
+                  <p><strong>Description:</strong> ${artifact.description}</p>
+                  <p><strong>Category:</strong> ${artifact.category}</p>
+                  <p><strong>Period:</strong> ${artifact.period}</p>
+                  <p><strong>Location:</strong> ${artifact.location}</p>
+                  <p class="citation">📚 <strong>Citation:</strong> ${artifact.citation}</p>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+        
+        resultsHTML += '</div>';
+        resultsDiv.innerHTML = resultsHTML;
+      } else {
+        resultsDiv.innerHTML = `
+          <div class="status">
+            <p><strong>No exact matches found.</strong></p>
+            <p>Our AI-powered search system couldn't find verified artifacts matching "${query}". This could mean:</p>
+            <ul>
+              <li>The artifact hasn't been uploaded yet</li>
+              <li>It's pending expert review</li>
+              <li>Try using different keywords (e.g., "pottery", "fossil", "ancient")</li>
+            </ul>
+          </div>
+        `;
+      }
+    }
+
+    /* Display Pending Artifacts for Approval */
+    function displayPendingArtifacts() {
+      const queueDiv = document.getElementById("approvalQueue");
+      if (!queueDiv) return;
+      
+      if (pendingArtifacts.length === 0) {
+        queueDiv.innerHTML = `
+          <div class="success-message">
+            ✅ All submissions have been reviewed! No pending artifacts at this time.
+          </div>
+        `;
+        return;
+      }
+      
+      let html = `<h3>Pending Submissions <span class="badge badge-pending">${pendingArtifacts.length}</span></h3>`;
+      html += '<p class="instructions">Review each submission carefully before approving it to the verified database.</p>';
+      
+      pendingArtifacts.forEach(artifact => {
+        const isPending = artifact.status === 'pending';
+        const isRejected = artifact.status === 'rejected';
+        
+        html += `
+          <div class="pending-item ${isRejected ? 'rejected-item' : ''}">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+              ${artifact.images && artifact.images.length > 0 ? 
+                `<div>
+                  ${artifact.images.map(img => `<img src="${img}" style="width: 150px; height: 100px; object-fit: cover; border-radius: 6px; margin-right: 10px;" />`).join('')}
+                </div>` : ''}
+              <div style="flex: 1;">
+                <h4>${artifact.name} ${isRejected ? '<span class="badge" style="background: #dc3545;">Rejected</span>' : '<span class="badge badge-pending">Pending Review</span>'}</h4>
+                <p><strong>Description:</strong> ${artifact.description}</p>
+                <p><strong>Category:</strong> ${artifact.category}</p>
+                <p><strong>Location:</strong> ${artifact.location}</p>
+                <p><strong>Uploaded by:</strong> ${artifact.uploadedBy} on ${artifact.date}</p>
+                ${isRejected && artifact.rejectionReason ? `<p style="color: #dc3545; margin-top: 10px;"><strong>Rejection Reason:</strong> ${artifact.rejectionReason}</p>` : ''}
+              </div>
+            </div>
+            ${isPending ? `
+              <div class="approval-buttons">
+                <button class="btn-success" onclick="approveArtifact(${artifact.id})">✓ Approve & Verify</button>
+                <button class="btn-danger" onclick="rejectArtifact(${artifact.id})">✗ Reject</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      queueDiv.innerHTML = html;
+    }
+
+    /* Approve Artifact */
+    function approveArtifact(id) {
+      const artifact = pendingArtifacts.find(a => a.id === id);
+      if (!artifact) return;
+      
+      // Add to approved list
+      approvedArtifacts.push({
+        id: 1000 + id,
+        name: artifact.name,
+        description: artifact.description,
+        category: artifact.category,
+        location: artifact.location,
+        period: "Recently Added",
+        verified: true,
+        citation: `Verified by Expert Panel on ${new Date().toLocaleDateString()}`
+      });
+      
+      // Remove from pending
+      pendingArtifacts = pendingArtifacts.filter(a => a.id !== id);
+      
+      alert(`✓ "${artifact.name}" has been approved and added to the verified database!`);
+      displayPendingArtifacts();
+    }
+
+    /* Reject Artifact */
+    function rejectArtifact(id) {
+      const artifact = pendingArtifacts.find(a => a.id === id);
+      if (!artifact) return;
+      
+      const reason = prompt(`Please provide a reason for rejecting "${artifact.name}":
+
+Examples:
+- Insufficient documentation
+- Image quality too low
+- Missing verification credentials
+- Duplicate entry`);
+      
+      if (reason && reason.trim()) {
+        artifact.status = 'rejected';
+        artifact.rejectionReason = reason.trim();
+        
+        alert(`"${artifact.name}" has been rejected.\n\nThe submitter (${artifact.uploadedBy}) will be notified with the rejection reason:\n"${reason}"`);
+        displayPendingArtifacts();
+      }
+    }
+
+    /* Excel Upload Handler */
+    function handleExcelUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const artifacts = XLSX.utils.sheet_to_json(sheet);
+          
+          artifacts.forEach((artifact, index) => {
+            pendingArtifacts.push({
+              id: Date.now() + index,
+              name: artifact.Name || "Unnamed Artifact",
+              description: artifact.Description || "No description",
+              category: artifact.Category || "Artifact",
+              uploadedBy: "Excel Import",
+              date: new Date().toLocaleDateString(),
+              location: artifact.Location || "Unknown"
+            });
+          });
+          
+          alert(`✓ ${artifacts.length} artifact(s) imported and added to approval queue!`);
+          event.target.value = '';
+        } catch (error) {
+          alert("Error reading Excel file. Please check the format.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    /* Submit New Artifact */
+    function submitArtifact(event) {
+      event.preventDefault();
+      
+      if (!isLoggedIn) {
+        alert("Please login to submit artifacts.");
+        return;
+      }
+      
+      const name = document.getElementById("artifactName").value;
+      const description = document.getElementById("artifactDescription").value;
+      const category = document.getElementById("artifactCategory").value;
+      const location = document.getElementById("artifactLocation").value;
+      const imageFiles = document.getElementById("artifactImages").files;
+      
+      // Process uploaded images
+      const images = [];
+      const processImages = async () => {
+        for (let i = 0; i < imageFiles.length; i++) {
+          const reader = new FileReader();
+          await new Promise((resolve) => {
+            reader.onload = (e) => {
+              images.push(e.target.result);
+              resolve();
+            };
+            reader.readAsDataURL(imageFiles[i]);
+          });
+        }
+        
+        pendingArtifacts.push({
+          id: Date.now(),
+          name: name,
+          description: description,
+          category: category,
+          uploadedBy: currentUser.name,
+          date: new Date().toLocaleDateString(),
+          location: location,
+          status: 'pending',
+          images: images.length > 0 ? images : ["https://via.placeholder.com/300x200?text=No+Image"]
+        });
+        
+        document.getElementById("uploadForm").reset();
+        
+        const successDiv = document.getElementById("uploadSuccess");
+        successDiv.innerHTML = `
+          <div class="success-message">
+            ✓ "${name}" has been submitted to the staging area for expert review!<br>
+            <small>Status: Pending verification by archaeology department</small><br>
+            <small>You will be notified once the review is complete.</small>
+          </div>
+        `;
+        
+        setTimeout(() => {
+          successDiv.innerHTML = '';
+        }, 7000);
+      };
+      
+      processImages();
+    }
+
+    /* Initialize on Page Load */
+    window.onload = function () {
+      updateLanguage();
+      // Show login screen initially
+      document.getElementById("loginScreen").style.display = "flex";
+      document.getElementById("mainApp").style.display = "none";
+      
+      // Add enter key support for search
+      setTimeout(() => {
+        const searchInput = document.getElementById("searchInput");
+        if (searchInput) {
+          searchInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+              searchArtifacts();
+            }
+          });
+        }
+      }, 100);
+    };
+  </script>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen">
+    <div class="login-container">
+      <h1>🏛️ ArchSearch</h1>
+      <p class="subtitle">Verified Archaeological Database System</p>
+      <p style="text-align: center; color: #666; margin-bottom: 20px;">
+        Licensed Archaeologist Login
+      </p>
+      
+      <div id="loginError" class="login-error"></div>
+      
+      <form id="loginForm" onsubmit="login(event)">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" required autocomplete="username">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+        
+        <button type="submit" class="btn-primary">Login</button>
+      </form>
+      
+      <div class="demo-credentials">
+        <h4>🎓 Demo Credentials</h4>
+        <p><strong>Username:</strong> <code>demo</code><br>
+        <strong>Password:</strong> <code>demo</code></p>
+        <p style="margin-top: 10px; font-size: 0.9em;">Or try: <code>dr.rodriguez</code> / <code>demo123</code></p>
+      </div>
+      
+      <p style="text-align: center; margin-top: 20px; font-size: 0.85em; color: #666;">
+        📖 Search is open to everyone • Upload requires login
+      </p>
+    </div>
+  </div>
+
+  <!-- Main Application -->
+  <div id="mainApp">
+    <!-- Navbar -->
+    <div class="navbar">
+      <h1>🏛️ ArchSearch</h1>
+      <div class="navbar-right">
+        <span class="user-badge" id="userInfo"></span>
+        <select onchange="currentLanguage=this.value; updateLanguage()">
+          <option value="en">🇬🇧 English</option>
+          <option value="es">🇪🇸 Español</option>
+        </select>
+        <button id="logoutButton" onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+  <!-- Tabs Section -->
+  <div class="tabs">
+    <div class="tab active" data-tab="discoverTab" onclick="switchTab('discoverTab')">
+      <span id="discoverTabText">🔍 Discover Artifacts</span>
+    </div>
+    <div class="tab" data-tab="uploadTab" onclick="switchTab('uploadTab')">
+      <span id="uploadTabText">📤 Upload Artifacts</span>
+    </div>
+    <div class="tab" data-tab="approveTab" onclick="switchTab('approveTab')">
+      <span id="approveTabText">✅ Approval Queue</span>
+    </div>
+  </div>
+
+  <!-- Discover Tab -->
+  <div id="discoverTab" class="container active">
+    <h1>🔍 Discover Artifacts</h1>
+    <p class="instructions">
+      Search our verified archaeological database using natural language or upload an image for AI-powered visual recognition.
+    </p>
+    
+    <h3>🔤 Text Search</h3>
+    <div class="form-group">
+      <input id="searchInput" type="text" placeholder="Search for artifacts (e.g., Mesoamerican Pottery, fossils, ancient texts)">
+    </div>
+    <button id="searchButton" class="btn-primary" onclick="searchArtifacts()">Search Verified Database</button>
+    
+    <h3 style="margin-top: 30px;">📸 Image Search (AI-Powered)</h3>
+    <p class="instructions">
+      Take a photo of a rock, fossil, or artifact with your iPad camera and upload it. Our AI will analyze the image and match it against our verified database.
+    </p>
+    <div class="upload-area" onclick="document.getElementById('imageSearchInput').click()">
+      <h3>📷 Upload Image for Recognition</h3>
+      <p>Click to take a photo or upload an image</p>
+      <p style="font-size: 0.85em; color: #666;">Supported: JPG, PNG, HEIC (iPad camera)</p>
+      <input type="file" id="imageSearchInput" accept="image/*" capture="environment" onchange="searchByImage(event)" style="display: none;">
+    </div>
+    
+    <div id="searchResults"></div>
+  </div>
+
+  <!-- Upload Tab -->
+  <div id="uploadTab" class="container">
+    <h1 id="uploadTitle">📤 Upload New Artifact</h1>
+    <p id="uploadInstructions" class="instructions">
+      Licensed archaeologists can upload artifacts here. All submissions will be reviewed by our expert panel before being added to the verified database.
+    </p>
+    
+    <div class="upload-area" onclick="document.getElementById('excelUpload').click()">
+      <h3>📊 Bulk Upload via Excel</h3>
+      <p>Click to upload an Excel file with multiple artifacts</p>
+      <p style="font-size: 0.85em; color: #666;">Required columns: Name, Description, Category, Location</p>
+      <input type="file" id="excelUpload" accept=".xls,.xlsx" onchange="handleExcelUpload(event)" style="display: none;">
+    </div>
+    
+    <h3 style="text-align: center; color: #999; margin: 20px 0;">— OR —</h3>
+    
+    <h3>📝 Manual Upload</h3>
+    <form id="uploadForm" onsubmit="submitArtifact(event)">
+      <div class="form-group">
+        <label for="artifactName">Artifact Name *</label>
+        <input type="text" id="artifactName" placeholder="e.g., Ancient Mayan Calendar Stone" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="artifactDescription">Description *</label>
+        <textarea id="artifactDescription" rows="4" placeholder="Detailed description of the artifact, its significance, and any notable features..." required></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="artifactCategory">Category *</label>
+        <select id="artifactCategory" required>
+          <option value="">Select Category</option>
+          <option value="Fossil">Fossil</option>
+          <option value="Artifact">Artifact</option>
+          <option value="Document">Document</option>
+          <option value="Pottery">Pottery</option>
+          <option value="Tool">Tool</option>
+          <option value="Structure">Structure</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="artifactLocation">Location *</label>
+        <input type="text" id="artifactLocation" placeholder="e.g., Tikal, Guatemala" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="artifactImages">Upload Images</label>
+        <input type="file" id="artifactImages" accept="image/*" multiple capture="environment">
+        <small style="color: #666; display: block; margin-top: 5px;">You can upload multiple images. Tap to use iPad camera or select from gallery.</small>
+      </div>
+      
+      <button id="uploadSubmitButton" class="btn-primary" type="submit">Submit to Staging Area for Review</button>
+    </form>
+    
+    <div id="uploadSuccess"></div>
+  </div>
+
+  <!-- Approval Queue Tab -->
+  <div id="approveTab" class="container">
+    <h1>✅ Approval Queue</h1>
+    <p class="instructions">
+      <strong>Expert Review Panel:</strong> Review submitted artifacts before they are added to the verified database. 
+      This ensures all information in ArchSearch maintains high quality and accuracy standards.
+    </p>
+    <div id="approvalQueue">
+      <!-- Pending artifacts will be displayed here -->
+    </div>
+  </div>
+
+  <!-- Copyright and Disclaimer Footer -->
+  <div class="copyright-footer">
+    <h3>⚖️ Terms of Use & Copyright Disclaimer</h3>
+    <div class="disclaimer">
+      <p><strong>© 2025 ArchSearch Platform. All rights reserved.</strong></p>
+      
+      <p><strong>Data Ownership & Liability:</strong></p>
+      <ul>
+        <li><strong>Data Ownership:</strong> All uploaded artifacts, images, documents, and associated data remain the intellectual property of the uploader. By uploading content, users grant ArchSearch a non-exclusive license to display and index the data.</li>
+        <li><strong>Uploader Responsibility:</strong> Licensed archaeologists who upload data are solely responsible for ensuring they have the legal rights to share such information and that it does not violate any copyright, privacy, or confidentiality obligations.</li>
+        <li><strong>No Liability for Sensitive Data:</strong> ArchSearch is NOT responsible for any sensitive, confidential, or proprietary data uploaded to the platform. Users must not upload classified, restricted, or personally identifiable information without proper authorization.</li>
+        <li><strong>Data Verification:</strong> While ArchSearch employs an expert review process, the platform does not guarantee the accuracy, completeness, or authenticity of any uploaded content. Users rely on the data at their own risk.</li>
+        <li><strong>Third-Party Access:</strong> ArchSearch is not liable for unauthorized access, data breaches, or misuse of uploaded information. Users should not upload irreplaceable or highly sensitive materials.</li>
+        <li><strong>Content Removal:</strong> ArchSearch reserves the right to remove any content that violates these terms, applicable laws, or ethical guidelines without prior notice.</li>
+      </ul>
+      
+      <p><strong>Use of Platform:</strong></p>
+      <ul>
+        <li>This platform is intended for educational and research purposes only.</li>
+        <li>Users must comply with all applicable laws and regulations regarding archaeological data sharing.</li>
+        <li>Commercial use of platform data requires explicit written permission.</li>
+      </ul>
+      
+      <p style="text-align: center; margin-top: 20px; font-size: 0.9em;">
+        <strong>ArchSearch Platform</strong> - Verified Archaeological Database System<br>
+        Prototype Demo • Version 1.0 • December 2025
+      </p>
+    </div>
+  </div>
+  </div> <!-- End mainApp -->
+</body>
+</html>
