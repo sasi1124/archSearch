@@ -15,7 +15,7 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
       margin: 0;
       padding: 0;
-      background: #f5f5f5;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
     }
     
@@ -562,6 +562,60 @@
         rejectButton: "Reject",
         noResults: "No results found. Please try again with different keywords.",
         excelUploadAlert: "Artifacts have been imported from Excel and added to approval queue.",
+        discoverHeader: "🔍 Discover Artifacts",
+        discoverDesc: "Search our verified archaeological database using natural language or upload an image for AI-powered visual recognition.",
+        textSearchHeader: "🔤 Text Search",
+        imageSearchHeader: "📸 Image Search (AI-Powered)",
+        imageSearchDesc: "Take a photo of a rock, fossil, or artifact with your iPad camera and upload it. Our AI will analyze the image and match it against our verified database.",
+        uploadImageBtn: "📷 Upload Image for Recognition",
+        uploadImageText: "Click to take a photo or upload an image",
+        uploadImageSupport: "Supported: JPG, PNG, HEIC (iPad camera)",
+        bulkUploadHeader: "📊 Bulk Upload via Excel",
+        bulkUploadText: "Click to upload an Excel file with multiple artifacts",
+        bulkUploadRequired: "Required columns: Name, Description, Category, Location",
+        orSeparator: "— OR —",
+        manualUploadHeader: "📝 Manual Upload",
+        artifactNameLabel: "Artifact Name *",
+        artifactNamePlaceholder: "e.g., Ancient Mayan Calendar Stone",
+        descriptionLabel: "Description *",
+        descriptionPlaceholder: "Detailed description of the artifact, its significance, and any notable features...",
+        categoryLabel: "Category *",
+        selectCategory: "Select Category",
+        locationLabel: "Location *",
+        locationPlaceholder: "e.g., Tikal, Guatemala",
+        uploadImagesLabel: "Upload Images",
+        uploadImagesHelp: "You can upload multiple images. Tap to use iPad camera or select from gallery.",
+        submitButtonLong: "Submit to Staging Area for Review",
+        approveQueueHeader: "✅ Approval Queue",
+        approveQueueDesc: "<strong>Expert Review Panel:</strong> Review submitted artifacts before they are added to the verified database. This ensures all information in ArchSearch maintains high quality and accuracy standards.",
+        searchDbButton: "Search Verified Database",
+        termsTitle: "⚖️ Terms of Use & Copyright Disclaimer",
+        copyright: "© 2025 ArchSearch Platform. All rights reserved.",
+        dataOwnershipTitle: "Data Ownership & Liability:",
+        dataOwnership: "<strong>Data Ownership:</strong> All uploaded artifacts, images, documents, and associated data remain the intellectual property of the uploader. By uploading content, users grant ArchSearch a non-exclusive license to display and index the data.",
+        uploaderResp: "<strong>Uploader Responsibility:</strong> Licensed archaeologists who upload data are solely responsible for ensuring they have the legal rights to share such information and that it does not violate any copyright, privacy, or confidentiality obligations.",
+        noLiability: "<strong>No Liability for Sensitive Data:</strong> ArchSearch is NOT responsible for any sensitive, confidential, or proprietary data uploaded to the platform. Users must not upload classified, restricted, or personally identifiable information without proper authorization.",
+        dataVerification: "<strong>Data Verification:</strong> While ArchSearch employs an expert review process, the platform does not guarantee the accuracy, completeness, or authenticity of any uploaded content. Users rely on the data at their own risk.",
+        thirdParty: "<strong>Third-Party Access:</strong> ArchSearch is not liable for unauthorized access, data breaches, or misuse of uploaded information. Users should not upload irreplaceable or highly sensitive materials.",
+        contentRemoval: "<strong>Content Removal:</strong> ArchSearch reserves the right to remove any content that violates these terms, applicable laws, or ethical guidelines without prior notice.",
+        usePlatformTitle: "Use of Platform:",
+        educational: "This platform is intended for educational and research purposes only.",
+        comply: "Users must comply with all applicable laws and regulations regarding archaeological data sharing.",
+        commercial: "Commercial use of platform data requires explicit written permission.",
+        footerText: "<strong>ArchSearch Platform</strong> - Verified Archaeological Database System<br>Prototype Demo • Version 1.0 • December 2025",
+        pendingSubmissions: "Pending Submissions",
+        reviewInstructions: "Review each submission carefully before approving it to the verified database.",
+        allReviewed: "✅ All submissions have been reviewed! No pending artifacts at this time.",
+        pendingReview: "Pending Review",
+        rejected: "Rejected",
+        description: "Description:",
+        category: "Category:",
+        location: "Location:",
+        uploadedBy: "Uploaded by:",
+        on: "on",
+        rejectionReason: "Rejection Reason:",
+        approveVerify: "✓ Approve & Verify",
+        rejectBtn: "✗ Reject"
       },
       es: {
         logout: "Cerrar sesión",
@@ -577,32 +631,146 @@
         rejectButton: "Rechazar",
         noResults: "No se encontraron resultados. Intente nuevamente con palabras clave diferentes.",
         excelUploadAlert: "Se importaron artefactos desde Excel y se agregaron a la cola de aprobación.",
+        discoverHeader: "🔍 Descubrir Artefactos",
+        discoverDesc: "Busque en nuestra base de datos arqueológica verificada usando lenguaje natural o cargue una imagen para reconocimiento visual impulsado por IA.",
+        textSearchHeader: "🔤 Búsqueda de Texto",
+        imageSearchHeader: "📸 Búsqueda por Imagen (Impulsado por IA)",
+        imageSearchDesc: "Tome una foto de una roca, fósil o artefacto con la cámara de su iPad y súbala. Nuestra IA analizará la imagen y la comparará con nuestra base de datos verificada.",
+        uploadImageBtn: "📷 Subir Imagen para Reconocimiento",
+        uploadImageText: "Haga clic para tomar una foto o subir una imagen",
+        uploadImageSupport: "Compatible: JPG, PNG, HEIC (cámara iPad)",
+        bulkUploadHeader: "📊 Carga Masiva vía Excel",
+        bulkUploadText: "Haga clic para cargar un archivo Excel con múltiples artefactos",
+        bulkUploadRequired: "Columnas requeridas: Nombre, Descripción, Categoría, Ubicación",
+        orSeparator: "— O —",
+        manualUploadHeader: "📝 Carga Manual",
+        artifactNameLabel: "Nombre del Artefacto *",
+        artifactNamePlaceholder: "ej., Piedra del Calendario Maya Antigua",
+        descriptionLabel: "Descripción *",
+        descriptionPlaceholder: "Descripción detallada del artefacto, su importancia y características notables...",
+        categoryLabel: "Categoría *",
+        selectCategory: "Seleccionar Categoría",
+        locationLabel: "Ubicación *",
+        locationPlaceholder: "ej., Tikal, Guatemala",
+        uploadImagesLabel: "Subir Imágenes",
+        uploadImagesHelp: "Puede subir múltiples imágenes. Toque para usar la cámara del iPad o seleccionar de la galería.",
+        submitButtonLong: "Enviar al Área de Revisión para Aprobación",
+        approveQueueHeader: "✅ Cola de Aprobación",
+        approveQueueDesc: "<strong>Panel de Revisión de Expertos:</strong> Revise los artefactos enviados antes de que se agreguen a la base de datos verificada. Esto asegura que toda la información en ArchSearch mantenga altos estándares de calidad y precisión.",
+        searchDbButton: "Buscar en Base de Datos Verificada",
+        termsTitle: "⚖️ Términos de Uso y Descargo de Responsabilidad de Derechos de Autor",
+        copyright: "© 2025 Plataforma ArchSearch. Todos los derechos reservados.",
+        dataOwnershipTitle: "Propiedad de Datos y Responsabilidad:",
+        dataOwnership: "<strong>Propiedad de Datos:</strong> Todos los artefactos, imágenes, documentos y datos asociados cargados siguen siendo propiedad intelectual del usuario que los sube. Al cargar contenido, los usuarios otorgan a ArchSearch una licencia no exclusiva para mostrar e indexar los datos.",
+        uploaderResp: "<strong>Responsabilidad del Usuario:</strong> Los arqueólogos con licencia que cargan datos son los únicos responsables de asegurarse de tener los derechos legales para compartir dicha información y que no viole ninguna obligación de derechos de autor, privacidad o confidencialidad.",
+        noLiability: "<strong>Sin Responsabilidad por Datos Sensibles:</strong> ArchSearch NO es responsable de ningún dato sensible, confidencial o propietario cargado en la plataforma. Los usuarios no deben cargar información clasificada, restringida o de identificación personal sin la autorización adecuada.",
+        dataVerification: "<strong>Verificación de Datos:</strong> Aunque ArchSearch emplea un proceso de revisión de expertos, la plataforma no garantiza la exactitud, integridad o autenticidad de ningún contenido cargado. Los usuarios confían en los datos bajo su propio riesgo.",
+        thirdParty: "<strong>Acceso de Terceros:</strong> ArchSearch no es responsable del acceso no autorizado, violaciones de datos o uso indebido de la información cargada. Los usuarios no deben cargar materiales irremplazables o altamente sensibles.",
+        contentRemoval: "<strong>Eliminación de Contenido:</strong> ArchSearch se reserva el derecho de eliminar cualquier contenido que viole estos términos, las leyes aplicables o las pautas éticas sin previo aviso.",
+        usePlatformTitle: "Uso de la Plataforma:",
+        educational: "Esta plataforma está destinada únicamente para fines educativos y de investigación.",
+        comply: "Los usuarios deben cumplir con todas las leyes y regulaciones aplicables sobre el intercambio de datos arqueológicos.",
+        commercial: "El uso comercial de los datos de la plataforma requiere permiso explícito por escrito.",
+        footerText: "<strong>Plataforma ArchSearch</strong> - Sistema de Base de Datos Arqueológica Verificada<br>Demo Prototipo • Versión 1.0 • Diciembre 2025",
+        pendingSubmissions: "Envíos Pendientes",
+        reviewInstructions: "Revise cada envío cuidadosamente antes de aprobarlo en la base de datos verificada.",
+        allReviewed: "✅ ¡Todos los envíos han sido revisados! No hay artefactos pendientes en este momento.",
+        pendingReview: "Revisión Pendiente",
+        rejected: "Rechazado",
+        description: "Descripción:",
+        category: "Categoría:",
+        location: "Ubicación:",
+        uploadedBy: "Subido por:",
+        on: "el",
+        rejectionReason: "Motivo del Rechazo:",
+        approveVerify: "✓ Aprobar y Verificar",
+        rejectBtn: "✗ Rechazar"
       }
     };
 
     /* Language Switching */
     function updateLanguage() {
       const t = translations[currentLanguage];
-      const elements = {
+      
+      // Update text content elements
+      const textElements = {
         logoutButton: t.logout,
         discoverTabText: t.discover,
         uploadTabText: t.upload,
         approveTabText: t.approve,
         uploadTitle: t.uploadTitle,
         uploadInstructions: t.uploadInstructions,
-        uploadSubmitButton: t.submitButton
+        uploadSubmitButton: t.submitButtonLong,
+        discoverHeader: t.discoverHeader,
+        discoverDesc: t.discoverDesc,
+        textSearchHeader: t.textSearchHeader,
+        imageSearchHeader: t.imageSearchHeader,
+        imageSearchDesc: t.imageSearchDesc,
+        uploadImageBtn: t.uploadImageBtn,
+        uploadImageText: t.uploadImageText,
+        uploadImageSupport: t.uploadImageSupport,
+        bulkUploadHeader: t.bulkUploadHeader,
+        bulkUploadText: t.bulkUploadText,
+        bulkUploadRequired: t.bulkUploadRequired,
+        orSeparator: t.orSeparator,
+        manualUploadHeader: t.manualUploadHeader,
+        artifactNameLabel: t.artifactNameLabel,
+        descriptionLabel: t.descriptionLabel,
+        categoryLabel: t.categoryLabel,
+        locationLabel: t.locationLabel,
+        uploadImagesLabel: t.uploadImagesLabel,
+        uploadImagesHelp: t.uploadImagesHelp,
+        approveQueueHeader: t.approveQueueHeader,
+        searchDbButton: t.searchDbButton
       };
       
-      Object.keys(elements).forEach(id => {
+      Object.keys(textElements).forEach(id => {
         const elem = document.getElementById(id);
-        if (elem) elem.innerText = elements[id];
+        if (elem) elem.innerText = textElements[id];
       });
       
+      // Update innerHTML elements (for HTML content)
+      const htmlElements = {
+        approveQueueDesc: t.approveQueueDesc,
+        termsTitle: t.termsTitle,
+        copyrightText: t.copyright,
+        dataOwnershipTitle: t.dataOwnershipTitle,
+        dataOwnership: t.dataOwnership,
+        uploaderResp: t.uploaderResp,
+        noLiability: t.noLiability,
+        dataVerification: t.dataVerification,
+        thirdParty: t.thirdParty,
+        contentRemoval: t.contentRemoval,
+        usePlatformTitle: t.usePlatformTitle,
+        educational: t.educational,
+        comply: t.comply,
+        commercial: t.commercial,
+        footerText: t.footerText
+      };
+      
+      Object.keys(htmlElements).forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.innerHTML = htmlElements[id];
+      });
+      
+      // Update placeholders
       const searchInput = document.getElementById("searchInput");
       if (searchInput) searchInput.placeholder = t.searchPlaceholder;
       
-      const searchButton = document.getElementById("searchButton");
-      if (searchButton) searchButton.innerText = t.searchButton;
+      const artifactNameInput = document.getElementById("artifactName");
+      if (artifactNameInput) artifactNameInput.placeholder = t.artifactNamePlaceholder;
+      
+      const descriptionInput = document.getElementById("artifactDescription");
+      if (descriptionInput) descriptionInput.placeholder = t.descriptionPlaceholder;
+      
+      const locationInput = document.getElementById("artifactLocation");
+      if (locationInput) locationInput.placeholder = t.locationPlaceholder;
+      
+      // Update select option
+      const categorySelect = document.getElementById("artifactCategory");
+      if (categorySelect && categorySelect.options[0]) {
+        categorySelect.options[0].text = t.selectCategory;
+      }
     }
 
     /* Tab Switching */
@@ -792,20 +960,21 @@
 
     /* Display Pending Artifacts for Approval */
     function displayPendingArtifacts() {
+      const t = translations[currentLanguage];
       const queueDiv = document.getElementById("approvalQueue");
       if (!queueDiv) return;
       
       if (pendingArtifacts.length === 0) {
         queueDiv.innerHTML = `
           <div class="success-message">
-            ✅ All submissions have been reviewed! No pending artifacts at this time.
+            ${t.allReviewed}
           </div>
         `;
         return;
       }
       
-      let html = `<h3>Pending Submissions <span class="badge badge-pending">${pendingArtifacts.length}</span></h3>`;
-      html += '<p class="instructions">Review each submission carefully before approving it to the verified database.</p>';
+      let html = `<h3>${t.pendingSubmissions} <span class="badge badge-pending">${pendingArtifacts.length}</span></h3>`;
+      html += `<p class="instructions">${t.reviewInstructions}</p>`;
       
       pendingArtifacts.forEach(artifact => {
         const isPending = artifact.status === 'pending';
@@ -819,18 +988,18 @@
                   ${artifact.images.map(img => `<img src="${img}" style="width: 150px; height: 100px; object-fit: cover; border-radius: 6px; margin-right: 10px;" />`).join('')}
                 </div>` : ''}
               <div style="flex: 1;">
-                <h4>${artifact.name} ${isRejected ? '<span class="badge" style="background: #dc3545;">Rejected</span>' : '<span class="badge badge-pending">Pending Review</span>'}</h4>
-                <p><strong>Description:</strong> ${artifact.description}</p>
-                <p><strong>Category:</strong> ${artifact.category}</p>
-                <p><strong>Location:</strong> ${artifact.location}</p>
-                <p><strong>Uploaded by:</strong> ${artifact.uploadedBy} on ${artifact.date}</p>
-                ${isRejected && artifact.rejectionReason ? `<p style="color: #dc3545; margin-top: 10px;"><strong>Rejection Reason:</strong> ${artifact.rejectionReason}</p>` : ''}
+                <h4>${artifact.name} ${isRejected ? `<span class="badge" style="background: #dc3545;">${t.rejected}</span>` : `<span class="badge badge-pending">${t.pendingReview}</span>`}</h4>
+                <p><strong>${t.description}</strong> ${artifact.description}</p>
+                <p><strong>${t.category}</strong> ${artifact.category}</p>
+                <p><strong>${t.location}</strong> ${artifact.location}</p>
+                <p><strong>${t.uploadedBy}</strong> ${artifact.uploadedBy} ${t.on} ${artifact.date}</p>
+                ${isRejected && artifact.rejectionReason ? `<p style="color: #dc3545; margin-top: 10px;"><strong>${t.rejectionReason}</strong> ${artifact.rejectionReason}</p>` : ''}
               </div>
             </div>
             ${isPending ? `
               <div class="approval-buttons">
-                <button class="btn-success" onclick="approveArtifact(${artifact.id})">✓ Approve & Verify</button>
-                <button class="btn-danger" onclick="rejectArtifact(${artifact.id})">✗ Reject</button>
+                <button class="btn-success" onclick="approveArtifact(${artifact.id})">${t.approveVerify}</button>
+                <button class="btn-danger" onclick="rejectArtifact(${artifact.id})">${t.rejectBtn}</button>
               </div>
             ` : ''}
           </div>
@@ -1063,25 +1232,25 @@ Examples:
 
   <!-- Discover Tab -->
   <div id="discoverTab" class="container active">
-    <h1>🔍 Discover Artifacts</h1>
-    <p class="instructions">
+    <h1 id="discoverHeader">🔍 Discover Artifacts</h1>
+    <p class="instructions" id="discoverDesc">
       Search our verified archaeological database using natural language or upload an image for AI-powered visual recognition.
     </p>
     
-    <h3>🔤 Text Search</h3>
+    <h3 id="textSearchHeader">🔤 Text Search</h3>
     <div class="form-group">
       <input id="searchInput" type="text" placeholder="Search for artifacts (e.g., Mesoamerican Pottery, fossils, ancient texts)">
     </div>
-    <button id="searchButton" class="btn-primary" onclick="searchArtifacts()">Search Verified Database</button>
+    <button id="searchDbButton" class="btn-primary" onclick="searchArtifacts()">Search Verified Database</button>
     
-    <h3 style="margin-top: 30px;">📸 Image Search (AI-Powered)</h3>
-    <p class="instructions">
+    <h3 style="margin-top: 30px;" id="imageSearchHeader">📸 Image Search (AI-Powered)</h3>
+    <p class="instructions" id="imageSearchDesc">
       Take a photo of a rock, fossil, or artifact with your iPad camera and upload it. Our AI will analyze the image and match it against our verified database.
     </p>
     <div class="upload-area" onclick="document.getElementById('imageSearchInput').click()">
-      <h3>📷 Upload Image for Recognition</h3>
-      <p>Click to take a photo or upload an image</p>
-      <p style="font-size: 0.85em; color: #666;">Supported: JPG, PNG, HEIC (iPad camera)</p>
+      <h3 id="uploadImageBtn">📷 Upload Image for Recognition</h3>
+      <p id="uploadImageText">Click to take a photo or upload an image</p>
+      <p style="font-size: 0.85em; color: #666;" id="uploadImageSupport">Supported: JPG, PNG, HEIC (iPad camera)</p>
       <input type="file" id="imageSearchInput" accept="image/*" capture="environment" onchange="searchByImage(event)" style="display: none;">
     </div>
     
@@ -1096,28 +1265,28 @@ Examples:
     </p>
     
     <div class="upload-area" onclick="document.getElementById('excelUpload').click()">
-      <h3>📊 Bulk Upload via Excel</h3>
-      <p>Click to upload an Excel file with multiple artifacts</p>
-      <p style="font-size: 0.85em; color: #666;">Required columns: Name, Description, Category, Location</p>
+      <h3 id="bulkUploadHeader">📊 Bulk Upload via Excel</h3>
+      <p id="bulkUploadText">Click to upload an Excel file with multiple artifacts</p>
+      <p style="font-size: 0.85em; color: #666;" id="bulkUploadRequired">Required columns: Name, Description, Category, Location</p>
       <input type="file" id="excelUpload" accept=".xls,.xlsx" onchange="handleExcelUpload(event)" style="display: none;">
     </div>
     
-    <h3 style="text-align: center; color: #999; margin: 20px 0;">— OR —</h3>
+    <h3 style="text-align: center; color: #999; margin: 20px 0;" id="orSeparator">— OR —</h3>
     
-    <h3>📝 Manual Upload</h3>
+    <h3 id="manualUploadHeader">📝 Manual Upload</h3>
     <form id="uploadForm" onsubmit="submitArtifact(event)">
       <div class="form-group">
-        <label for="artifactName">Artifact Name *</label>
+        <label for="artifactName" id="artifactNameLabel">Artifact Name *</label>
         <input type="text" id="artifactName" placeholder="e.g., Ancient Mayan Calendar Stone" required>
       </div>
       
       <div class="form-group">
-        <label for="artifactDescription">Description *</label>
+        <label for="artifactDescription" id="descriptionLabel">Description *</label>
         <textarea id="artifactDescription" rows="4" placeholder="Detailed description of the artifact, its significance, and any notable features..." required></textarea>
       </div>
       
       <div class="form-group">
-        <label for="artifactCategory">Category *</label>
+        <label for="artifactCategory" id="categoryLabel">Category *</label>
         <select id="artifactCategory" required>
           <option value="">Select Category</option>
           <option value="Fossil">Fossil</option>
@@ -1130,14 +1299,14 @@ Examples:
       </div>
       
       <div class="form-group">
-        <label for="artifactLocation">Location *</label>
+        <label for="artifactLocation" id="locationLabel">Location *</label>
         <input type="text" id="artifactLocation" placeholder="e.g., Tikal, Guatemala" required>
       </div>
       
       <div class="form-group">
-        <label for="artifactImages">Upload Images</label>
+        <label for="artifactImages" id="uploadImagesLabel">Upload Images</label>
         <input type="file" id="artifactImages" accept="image/*" multiple capture="environment">
-        <small style="color: #666; display: block; margin-top: 5px;">You can upload multiple images. Tap to use iPad camera or select from gallery.</small>
+        <small style="color: #666; display: block; margin-top: 5px;" id="uploadImagesHelp">You can upload multiple images. Tap to use iPad camera or select from gallery.</small>
       </div>
       
       <button id="uploadSubmitButton" class="btn-primary" type="submit">Submit to Staging Area for Review</button>
@@ -1148,8 +1317,8 @@ Examples:
 
   <!-- Approval Queue Tab -->
   <div id="approveTab" class="container">
-    <h1>✅ Approval Queue</h1>
-    <p class="instructions">
+    <h1 id="approveQueueHeader">✅ Approval Queue</h1>
+    <p class="instructions" id="approveQueueDesc">
       <strong>Expert Review Panel:</strong> Review submitted artifacts before they are added to the verified database. 
       This ensures all information in ArchSearch maintains high quality and accuracy standards.
     </p>
@@ -1160,28 +1329,28 @@ Examples:
 
   <!-- Copyright and Disclaimer Footer -->
   <div class="copyright-footer">
-    <h3>⚖️ Terms of Use & Copyright Disclaimer</h3>
+    <h3 id="termsTitle">⚖️ Terms of Use & Copyright Disclaimer</h3>
     <div class="disclaimer">
-      <p><strong>© 2025 ArchSearch Platform. All rights reserved.</strong></p>
+      <p id="copyrightText"><strong>© 2025 ArchSearch Platform. All rights reserved.</strong></p>
       
-      <p><strong>Data Ownership & Liability:</strong></p>
+      <p id="dataOwnershipTitle"><strong>Data Ownership & Liability:</strong></p>
       <ul>
-        <li><strong>Data Ownership:</strong> All uploaded artifacts, images, documents, and associated data remain the intellectual property of the uploader. By uploading content, users grant ArchSearch a non-exclusive license to display and index the data.</li>
-        <li><strong>Uploader Responsibility:</strong> Licensed archaeologists who upload data are solely responsible for ensuring they have the legal rights to share such information and that it does not violate any copyright, privacy, or confidentiality obligations.</li>
-        <li><strong>No Liability for Sensitive Data:</strong> ArchSearch is NOT responsible for any sensitive, confidential, or proprietary data uploaded to the platform. Users must not upload classified, restricted, or personally identifiable information without proper authorization.</li>
-        <li><strong>Data Verification:</strong> While ArchSearch employs an expert review process, the platform does not guarantee the accuracy, completeness, or authenticity of any uploaded content. Users rely on the data at their own risk.</li>
-        <li><strong>Third-Party Access:</strong> ArchSearch is not liable for unauthorized access, data breaches, or misuse of uploaded information. Users should not upload irreplaceable or highly sensitive materials.</li>
-        <li><strong>Content Removal:</strong> ArchSearch reserves the right to remove any content that violates these terms, applicable laws, or ethical guidelines without prior notice.</li>
+        <li id="dataOwnership"><strong>Data Ownership:</strong> All uploaded artifacts, images, documents, and associated data remain the intellectual property of the uploader. By uploading content, users grant ArchSearch a non-exclusive license to display and index the data.</li>
+        <li id="uploaderResp"><strong>Uploader Responsibility:</strong> Licensed archaeologists who upload data are solely responsible for ensuring they have the legal rights to share such information and that it does not violate any copyright, privacy, or confidentiality obligations.</li>
+        <li id="noLiability"><strong>No Liability for Sensitive Data:</strong> ArchSearch is NOT responsible for any sensitive, confidential, or proprietary data uploaded to the platform. Users must not upload classified, restricted, or personally identifiable information without proper authorization.</li>
+        <li id="dataVerification"><strong>Data Verification:</strong> While ArchSearch employs an expert review process, the platform does not guarantee the accuracy, completeness, or authenticity of any uploaded content. Users rely on the data at their own risk.</li>
+        <li id="thirdParty"><strong>Third-Party Access:</strong> ArchSearch is not liable for unauthorized access, data breaches, or misuse of uploaded information. Users should not upload irreplaceable or highly sensitive materials.</li>
+        <li id="contentRemoval"><strong>Content Removal:</strong> ArchSearch reserves the right to remove any content that violates these terms, applicable laws, or ethical guidelines without prior notice.</li>
       </ul>
       
-      <p><strong>Use of Platform:</strong></p>
+      <p id="usePlatformTitle"><strong>Use of Platform:</strong></p>
       <ul>
-        <li>This platform is intended for educational and research purposes only.</li>
-        <li>Users must comply with all applicable laws and regulations regarding archaeological data sharing.</li>
-        <li>Commercial use of platform data requires explicit written permission.</li>
+        <li id="educational">This platform is intended for educational and research purposes only.</li>
+        <li id="comply">Users must comply with all applicable laws and regulations regarding archaeological data sharing.</li>
+        <li id="commercial">Commercial use of platform data requires explicit written permission.</li>
       </ul>
       
-      <p style="text-align: center; margin-top: 20px; font-size: 0.9em;">
+      <p style="text-align: center; margin-top: 20px; font-size: 0.9em;" id="footerText">
         <strong>ArchSearch Platform</strong> - Verified Archaeological Database System<br>
         Prototype Demo • Version 1.0 • December 2025
       </p>
