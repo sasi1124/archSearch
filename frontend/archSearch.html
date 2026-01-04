@@ -1,0 +1,1533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8
+  <meta
+name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ArchSearch
+Platform - Verified Archaeological Database</title>
+  <script
+src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    /*
+General Styling */
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+
+     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial,
+sans-serif;
+      margin: 0;
+      padding: 0;
+      background:
+linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    
+    .navbar {
+ 
+    background-color: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(10px);
+  
+   padding: 15px 20px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px
+rgba(0, 0, 0, 0.1);
+    }
+    
+    .navbar h1 {
+      margin: 0;
+      font-size:
+28px;
+      font-weight: 700;
+    }
+    
+    .navbar-right {
+      display:
+flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .navbar-right
+select {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid
+rgba(255, 255, 255, 0.3);
+      color: white;
+      font-size: 14px;
+      cursor:
+pointer;
+      padding: 8px 12px;
+      border-radius: 5px;
+    }
+    
+   
+.navbar-right button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px
+solid rgba(255, 255, 255, 0.3);
+      color: white;
+      font-size: 14px;
+     
+cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 5px;
+     
+transition: all 0.3s;
+    }
+    
+    .navbar-right button:hover {
+      background:
+rgba(255, 255, 255, 0.3);
+    }
+
+    /* Tabs Styling */
+    .tabs {
+      display:
+flex;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.15);
+
+     padding: 0;
+      overflow-x: auto;
+    }
+    
+    .tab {
+      padding:
+15px 25px;
+      cursor: pointer;
+      text-align: center;
+      color:
+rgba(255, 255, 255, 0.7);
+      font-weight: 600;
+      transition: all 0.3s;
+     
+border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    
+   
+.tab:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    
+    .tab.active {
+      background-color: rgba(255, 255, 255, 0.15);
+     
+color: white;
+      border-bottom: 3px solid white;
+    }
+
+    /* Main
+Container Styling */
+    .container {
+      display: none;
+      max-width: 1000px;
+
+     margin: 30px auto;
+      padding: 30px;
+      background: white;
+     
+border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+    
+ 
+  .container.active {
+      display: block;
+    }
+
+    /* Forms and Search Box
+*/
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+     
+display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color:
+#333;
+    }
+    
+    input, textarea, select {
+      width: 100%;
+      padding:
+12px;
+      margin: 5px 0;
+      border: 2px solid #e0e0e0;
+      border-radius:
+6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+   
+input:focus, textarea:focus, select:focus {
+      outline: none;
+     
+border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 12px;
+    
+ margin: 5px 0;
+      border: none;
+      border-radius: 6px;
+      font-size:
+16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all
+0.3s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea
+0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+    
+ transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234,
+0.4);
+    }
+    
+    .btn-success {
+      background: #28a745;
+      color:
+white;
+    }
+    
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+ 
+  }
+    
+    button:disabled {
+      background-color: #ccc;
+      cursor:
+not-allowed;
+      transform: none;
+    }
+    
+    .status {
+      margin-top:
+15px;
+      padding: 15px;
+      border-radius: 6px;
+      background: #f8f9fa;
+   
+}
+    
+    .instructions {
+      font-style: italic;
+      font-size: 0.95em;
+   
+  color: #666;
+      margin-bottom: 20px;
+      padding: 15px;
+     
+background: #f0f4ff;
+      border-left: 4px solid #667eea;
+      border-radius: 4px;
+   
+}
+    
+    /* Search Results */
+    .search-result {
+      padding: 20px;
+     
+margin: 15px 0;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+     
+background: #fafafa;
+    }
+    
+    .search-result h3 {
+      margin-top: 0;
+   
+  color: #667eea;
+    }
+    
+    .citation {
+      font-size: 0.85em;
+     
+color: #666;
+      margin-top: 10px;
+      font-style: italic;
+    }
+    
+    /*
+Approval Queue */
+    .pending-item {
+      padding: 20px;
+      margin: 15px 0;
+ 
+    border: 2px solid #ffc107;
+      border-radius: 8px;
+      background:
+#fff9e6;
+    }
+    
+    .pending-item h4 {
+      margin-top: 0;
+      color: #333;
+ 
+  }
+    
+    .approval-buttons {
+      display: flex;
+      gap: 10px;
+     
+margin-top: 15px;
+    }
+    
+    .approval-buttons button {
+      width: auto;
+   
+  padding: 10px 20px;
+      flex: 1;
+    }
+    
+    .badge {
+      display:
+inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size:
+0.85em;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    
+   
+.badge-pending {
+      background: #ffc107;
+      color: #000;
+    }
+    
+   
+.badge-approved {
+      background: #28a745;
+      color: white;
+    }
+    
+   
+.badge-verified {
+      background: #17a2b8;
+      color: white;
+    }
+    
+    /*
+Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        margin:
+15px;
+        padding: 20px;
+      }
+      
+      .tabs {
+        font-size:
+14px;
+      }
+      
+      .tab {
+        padding: 12px 15px;
+      }
+      
+     
+.navbar h1 {
+        font-size: 20px;
+      }
+    }
+    
+    /* iPad specific
+*/
+    @media (min-width: 768px) and (max-width: 1024px) {
+      .container {
+    max-width: 90%;
+      }
+    }
+    
+    .upload-area {
+      border: 2px
+dashed #667eea;
+      border-radius: 8px;
+      padding: 30px;
+      text-align:
+center;
+      background: #f8f9ff;
+      margin-bottom: 20px;
+      cursor:
+pointer;
+      transition: all 0.3s;
+    }
+    
+    .upload-area:hover {
+     
+background: #f0f4ff;
+      border-color: #764ba2;
+    }
+    
+    .success-message {
+   
+  background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+ 
+    padding: 15px;
+      border-radius: 6px;
+      margin: 15px 0;
+    }
+    
+ 
+  /* Login Screen */
+    #loginScreen {
+      display: flex;
+     
+justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding:
+20px;
+    }
+    
+    .login-container {
+      background: white;
+      padding:
+40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0,
+0.2);
+      max-width: 450px;
+      width: 100%;
+    }
+    
+    .login-container h1
+{
+      text-align: center;
+      color: #667eea;
+      margin-bottom: 10px;
+  
+ }
+    
+    .login-container .subtitle {
+      text-align: center;
+      color:
+#666;
+      margin-bottom: 30px;
+      font-size: 0.9em;
+    }
+    
+   
+.login-error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color:
+#721c24;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom:
+15px;
+      display: none;
+    }
+    
+    .demo-credentials {
+      background:
+#e7f3ff;
+      border: 1px solid #b3d9ff;
+      padding: 15px;
+     
+border-radius: 6px;
+      margin-top: 20px;
+      font-size: 0.85em;
+    }
+    
+   
+.demo-credentials h4 {
+      margin-top: 0;
+      color: #0056b3;
+    }
+    
+   
+.demo-credentials code {
+      background: #fff;
+      padding: 2px 6px;
+     
+border-radius: 3px;
+      font-family: monospace;
+    }
+    
+    .rejected-item {
+     
+border-color: #dc3545 !important;
+      background: #ffe6e6 !important;
+     
+opacity: 0.9;
+    }
+    
+    .image-search-btn {
+      background:
+linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px
+20px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-block;
+ 
+    margin: 10px 0;
+      transition: all 0.3s;
+    }
+    
+   
+.image-search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px
+rgba(102, 126, 234, 0.4);
+    }
+    
+    #mainApp {
+      display: none;
+    }
+    
+  
+ .user-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 5px
+12px;
+      border-radius: 15px;
+      font-size: 0.85em;
+    }
+    
+    /*
+Copyright Footer */
+    .copyright-footer {
+      background: rgba(0, 0, 0, 0.2);
+   
+  color: white;
+      padding: 30px 20px;
+      text-align: center;
+     
+margin-top: 40px;
+    }
+    
+    .copyright-footer h3 {
+      margin-top: 0;
+     
+font-size: 1.1em;
+    }
+    
+    .disclaimer {
+      max-width: 900px;
+     
+margin: 20px auto;
+      font-size: 0.85em;
+      line-height: 1.6;
+      opacity:
+0.9;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.1);
+      padding:
+20px;
+      border-radius: 8px;
+    }
+    
+    .disclaimer ul {
+      margin:
+10px 0;
+      padding-left: 20px;
+    }
+    
+    .disclaimer li {
+      margin:
+8px 0;
+    }
+  </style>
+  <script>
+    /* Configuration */
+    const API_BASE = "http://127.0.0.1:5000/api";
+    
+    /* State Variables and Data */
+    let
+currentLanguage = "en";
+    let isLoggedIn = false;
+    let currentUser = null;
+   
+
+    // Licensed archaeologist credentials (demo purposes)
+    const
+licensedArchaeologists = [
+      { username: "dr.rodriguez", password: "demo123", name:
+"Dr. Maria Rodriguez", license: "ARC-2024-001" },
+      { username: "dr.chen",
+password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
+      {
+        username: "expert", password: "expert123", name: "Dr. Sarah Expert", license:
+"ARC-EXPERT-001"
+      },
+      {
+        username: "demo", password: "demo", name: "Demo User", license: "ARC-DEMO-001" }
+   
+];
+    
+    let pendingArtifacts = [];
+    let approvedArtifacts = [];
+    let rejectedArtifacts = [];
+    
+  
+ const translations = {
+  en: {
+    logout: "Logout",
+    discover: "Discover Artifacts",
+    upload: "Upload Artifacts",
+    approve: "Approval Queue",
+    searchPlaceholder: "Search for artifacts (e.g., Mesoamerican Pottery, fossils, ancient texts)",
+    searchButton: "Search",
+    uploadTitle: "Upload New Artifact",
+    uploadInstructions: "Licensed archaeologists can upload artifacts here. All submissions will be reviewed by expert panel before being added to the verified database.",
+    submitButton: "Submit for Review",
+    approveButton: "Approve",
+    rejectButton: "Reject",
+    noResults: "No results found. Please try again with different keywords.",
+    excelUploadAlert: "Artifacts have been imported from Excel and added to approval queue.",
+    discoverHeader: "🔍 Discover Artifacts",
+    discoverDesc: "Search our verified archaeological database using natural language or upload an image for AI-powered visual recognition.",
+    textSearchHeader: "🔤 Text Search",
+    imageSearchHeader: "📸 Image Search (AI-Powered)",
+    imageSearchDesc: "Take a photo of a rock, fossil, or artifact with your iPad camera and upload it. Our AI will analyze the image and match it against our verified database.",
+    uploadImageBtn: "📷 Upload Image for Recognition",
+    uploadImageText: "Click to take a photo or upload an image",
+    uploadImageSupport: "Supported: JPG, PNG, HEIC (iPad camera)",
+    bulkUploadHeader: "📊 Bulk Upload via Excel",
+    bulkUploadText: "Click to upload an Excel file with multiple artifacts",
+    bulkUploadRequired: "Required columns: Name, Description, Category, Location",
+    orSeparator: "— OR —",
+    manualUploadHeader: "📝 Manual Upload",
+    artifactNameLabel: "Artifact Name *",
+    artifactNamePlaceholder: "e.g., Ancient Mayan Calendar Stone",
+    descriptionLabel: "Description *",
+    descriptionPlaceholder: "Detailed description of the artifact, its significance, and any notable features...",
+    categoryLabel: "Category *",
+    selectCategory: "Select Category",
+    locationLabel: "Location *",
+    locationPlaceholder: "e.g., Tikal, Guatemala",
+    uploadImagesLabel: "Upload Images",
+    uploadImagesHelp: "You can upload multiple images. Tap to use iPad camera or select from gallery.",
+    submitButtonLong: "Submit to Staging Area for Review",
+    approveQueueHeader: "✅ Approval Queue",
+    approveQueueDesc: "<strong>Expert Review Panel:</strong> Review submitted artifacts before they are added to the verified database. This ensures all information in ArchSearch maintains high quality and accuracy standards.",
+    searchDbButton: "Search Verified Database",
+    termsTitle: "⚖️ Terms of Use & Copyright Disclaimer",
+    copyright: "© 2025 ArchSearch Platform. All rights reserved.",
+    dataOwnershipTitle: "Data Ownership & Liability:",
+    dataOwnership: "<strong>Data Ownership:</strong> All uploaded artifacts, images, documents, and associated data remain the intellectual property of the uploader. By uploading content, users grant ArchSearch a non-exclusive license to display and index the data.",
+    uploaderResp: "<strong>Uploader Responsibility:</strong> Licensed archaeologists who upload data are solely responsible for ensuring they have the legal rights to share such information and that it does not violate any copyright, privacy, or confidentiality obligations.",
+    noLiability: "<strong>No Liability for Sensitive Data:</strong> ArchSearch is NOT responsible for any sensitive, confidential, or proprietary data uploaded to the platform. Users must not upload classified, restricted, or personally identifiable information without proper authorization.",
+    dataVerification: "<strong>Data Verification:</strong> While ArchSearch employs an expert review process, the platform does not guarantee the accuracy, completeness, or authenticity of any uploaded content. Users rely on the data at their own risk.",
+    thirdParty: "<strong>Third-Party Access:</strong> ArchSearch is not liable for unauthorized access, data breaches, or misuse of uploaded information. Users should not upload irreplaceable or highly sensitive materials.",
+    contentRemoval: "<strong>Content Removal:</strong> ArchSearch reserves the right to remove any content that violates these terms, applicable laws, or ethical guidelines without prior notice.",
+    usePlatformTitle: "Use of Platform:",
+    educational: "This platform is intended for educational and research purposes only.",
+    comply: "Users must comply with all applicable laws and regulations regarding archaeological data sharing.",
+    commercial: "Commercial use of platform data requires explicit written permission.",
+    footerText: "<strong>ArchSearch Platform</strong> - Verified Archaeological Database System<br>Prototype Demo • Version 1.0 • December 2025",
+    pendingSubmissions: "Pending Submissions",
+    reviewInstructions: "Review each submission carefully before approving it to the verified database.",
+    allReviewed: "✅ All submissions have been reviewed! No pending artifacts at this time.",
+    pendingReview: "Pending Review",
+    rejected: "Rejected",
+    description: "Description:",
+    category: "Category:",
+    location: "Location:",
+    uploadedBy: "Uploaded by:",
+    on: "on",
+    rejectionReason: "Rejection Reason:",
+    approveVerify: "✓ Approve & Verify",
+    rejectBtn: "✗ Reject",
+    mySubmissionsTabText: "My Submissions",
+    mySubmissionsHeader: "My Submissions"
+  },
+  es: {
+    logout: "Cerrar sesión",
+    discover: "Descubrir Artefactos",
+    upload: "Subir Artefactos",
+    approve: "Cola de Aprobación",
+    searchPlaceholder: "Buscar artefactos (p. ej., cerámica mesoamericana, fósiles, textos antiguos)",
+    searchButton: "Buscar",
+    uploadTitle: "Subir Nuevo Artefacto",
+    uploadInstructions: "Los arqueólogos con licencia pueden cargar artefactos aquí. Todas las presentaciones serán revisadas por un panel de expertos antes de agregarse a la base de datos verificada.",
+    submitButton: "Enviar para Revisión",
+    approveButton: "Aprobar",
+    rejectButton: "Rechazar",
+    noResults: "No se encontraron resultados. Intente nuevamente con palabras clave diferentes.",
+    excelUploadAlert: "Se importaron artefactos desde Excel y se agregaron a la cola de aprobación.",
+    discoverHeader: "🔍 Descubrir Artefactos",
+    discoverDesc: "Busque en nuestra base de datos arqueológica verificada usando lenguaje natural o cargue una imagen para reconocimiento visual impulsado por IA.",
+    textSearchHeader: "🔤 Búsqueda de Texto",
+    imageSearchHeader: "📸 Búsqueda por Imagen (Impulsado por IA)",
+    imageSearchDesc: "Tome una foto de una roca, fósil o artefacto con la cámara de su iPad y súbala. Nuestra IA analizará la imagen y la comparará con nuestra base de datos verificada.",
+    uploadImageBtn: "📷 Subir Imagen para Reconocimiento",
+    uploadImageText: "Haga clic para tomar una foto o subir una imagen",
+    uploadImageSupport: "Compatible: JPG, PNG, HEIC (cámara iPad)",
+    bulkUploadHeader: "📊 Carga Masiva vía Excel",
+    bulkUploadText: "Haga clic para cargar un archivo Excel con múltiples artefactos",
+    bulkUploadRequired: "Columnas requeridas: Nombre, Descripción, Categoría, Ubicación",
+    orSeparator: "— O —",
+    manualUploadHeader: "📝 Carga Manual",
+    artifactNameLabel: "Nombre del Artefacto *",
+    artifactNamePlaceholder: "ej., Piedra del Calendario Maya Antigua",
+    descriptionLabel: "Descripción *",
+    descriptionPlaceholder: "Descripción detallada del artefacto, su importancia y características notables...",
+    categoryLabel: "Categoría *",
+    selectCategory: "Seleccionar Categoría",
+    locationLabel: "Ubicación *",
+    locationPlaceholder: "ej., Tikal, Guatemala",
+    uploadImagesLabel: "Subir Imágenes",
+    uploadImagesHelp: "Puede subir múltiples imágenes. Toque para usar la cámara del iPad o seleccionar de la galería.",
+    submitButtonLong: "Enviar al Área de Revisión para Aprobación",
+    approveQueueHeader: "✅ Cola de Aprobación",
+    approveQueueDesc: "<strong>Panel de Revisión de Expertos:</strong> Revise los artefactos enviados antes de que se agreguen a la base de datos verificada. Esto asegura que toda la información en ArchSearch mantenga altos estándares de calidad y precisión.",
+    searchDbButton: "Buscar en Base de Datos Verificada",
+    termsTitle: "⚖️ Términos de Uso y Descargo de Responsabilidad de Derechos de Autor",
+    copyright: "© 2025 Plataforma ArchSearch. Todos los derechos reservados.",
+    dataOwnershipTitle: "Propiedad de Datos y Responsabilidad:",
+    dataOwnership: "<strong>Propiedad de Datos:</strong> Todos los artefactos, imágenes, documentos y datos asociados cargados siguen siendo propiedad intelectual del usuario que los sube. Al cargar contenido, los usuarios otorgan a ArchSearch una licencia no exclusiva para mostrar e indexar los datos.",
+    uploaderResp: "<strong>Responsabilidad del Usuario:</strong> Los arqueólogos con licencia que cargan datos son los únicos responsables de asegurarse de tener los derechos legales para compartir dicha información y que no viole ninguna obligación de derechos de autor, privacidad o confidencialidad.",
+    noLiability: "<strong>Sin Responsabilidad por Datos Sensibles:</strong> ArchSearch NO es responsable de ningún dato sensible, confidencial o propietario cargado en la plataforma. Los usuarios no deben cargar información clasificada, restringida o de identificación personal sin la autorización adecuada.",
+    dataVerification: "<strong>Verificación de Datos:</strong> Aunque ArchSearch emplea un proceso de revisión de expertos, la plataforma no garantiza la exactitud, integridad o autenticidad de ningún contenido cargado. Los usuarios confían en los datos bajo su propio riesgo.",
+    thirdParty: "<strong>Acceso de Terceros:</strong> ArchSearch no es responsable del acceso no autorizado, violaciones de datos o uso indebido de la información cargada. Los usuarios no deben cargar materiales irremplazables o altamente sensibles.",
+    contentRemoval: "<strong>Eliminación de Contenido:</strong> ArchSearch se reserva el derecho de eliminar cualquier contenido que viole estos términos, las leyes aplicables o las pautas éticas sin previo aviso.",
+    usePlatformTitle: "Uso de la Plataforma:",
+    educational: "Esta plataforma está destinada únicamente para fines educativos y de investigación.",
+    comply: "Los usuarios deben cumplir con todas las leyes y regulaciones aplicables sobre el intercambio de datos arqueológicos.",
+    commercial: "El uso comercial de los datos de la plataforma requiere permiso explícito por escrito.",
+    footerText: "<strong>Plataforma ArchSearch</strong> - Sistema de Base de Datos Arqueológica Verificada<br>Demo Prototipo • Versión 1.0 • Diciembre 2025",
+    pendingSubmissions: "Envíos Pendientes",
+    reviewInstructions: "Revise cada envío cuidadosamente antes de aprobarlo en la base de datos verificada.",
+    allReviewed: "✅ ¡Todos los envíos han sido revisados! No hay artefactos pendientes en este momento.",
+    pendingReview: "Revisión Pendiente",
+    rejected: "Rechazado",
+    description: "Descripción:",
+    category: "Categoría:",
+    location: "Ubicación:",
+    uploadedBy: "Subido por:",
+    on: "el",
+    rejectionReason: "Motivo del Rechazo:",
+    approveVerify: "✓ Aprobar y Verificar",
+    rejectBtn: "✗ Rechazar",
+    mySubmissionsTabText: "Mis Envíos",
+    mySubmissionsHeader: "Mis Envíos"
+  }
+};
+
+    /* Language Switching */
+    function updateLanguage() {
+      const t = translations[currentLanguage];
+      
+      // Update text content elements
+      const textElements = {
+        logoutButton: t.logout,
+        discoverTabText: t.discover,
+        uploadTabText: t.upload,
+        approveTabText: t.approve,
+        uploadTitle: t.uploadTitle,
+        uploadInstructions: t.uploadInstructions,
+        uploadSubmitButton: t.submitButtonLong,
+        discoverHeader: t.discoverHeader,
+        discoverDesc: t.discoverDesc,
+        textSearchHeader: t.textSearchHeader,
+        imageSearchHeader: t.imageSearchHeader,
+        imageSearchDesc: t.imageSearchDesc,
+        uploadImageBtn: t.uploadImageBtn,
+        uploadImageText: t.uploadImageText,
+        uploadImageSupport: t.uploadImageSupport,
+        bulkUploadHeader: t.bulkUploadHeader,
+        bulkUploadText: t.bulkUploadText,
+        bulkUploadRequired: t.bulkUploadRequired,
+        orSeparator: t.orSeparator,
+        manualUploadHeader: t.manualUploadHeader,
+        artifactNameLabel: t.artifactNameLabel,
+        descriptionLabel: t.descriptionLabel,
+        categoryLabel: t.categoryLabel,
+        locationLabel: t.locationLabel,
+        uploadImagesLabel: t.uploadImagesLabel,
+        uploadImagesHelp: t.uploadImagesHelp,
+        approveQueueHeader: t.approveQueueHeader,
+        searchDbButton: t.searchDbButton,
+        mySubmissionsTabText: t.mySubmissionsTabText
+      };
+
+      Object.keys(textElements).forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.innerText = textElements[id];
+      });
+      
+      // Update innerHTML elements (for HTML content)
+      const htmlElements = {
+        approveQueueDesc: t.approveQueueDesc,
+        termsTitle: t.termsTitle,
+        copyrightText: t.copyright,
+        dataOwnershipTitle: t.dataOwnershipTitle,
+        dataOwnership: t.dataOwnership,
+        uploaderResp: t.uploaderResp,
+        noLiability: t.noLiability,
+        dataVerification: t.dataVerification,
+        thirdParty: t.thirdParty,
+        contentRemoval: t.contentRemoval,
+        usePlatformTitle: t.usePlatformTitle,
+        educational: t.educational,
+        comply: t.comply,
+        commercial: t.commercial,
+        footerText: t.footerText
+      };
+      
+      Object.keys(htmlElements).forEach(id => {
+        const elem = document.getElementById(id);
+        if (elem) elem.innerHTML = htmlElements[id];
+      });
+
+      // Update placeholders
+      const searchInput = document.getElementById("searchInput");
+      if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+      
+      const artifactNameInput = document.getElementById("artifactName");
+      if (artifactNameInput) artifactNameInput.placeholder = t.artifactNamePlaceholder;
+      
+      const descriptionInput = document.getElementById("artifactDescription");
+      if (descriptionInput) descriptionInput.placeholder = t.descriptionPlaceholder;
+      
+      const locationInput = document.getElementById("artifactLocation");
+      if (locationInput) locationInput.placeholder = t.locationPlaceholder;
+      
+      // Update select option
+      const categorySelect = document.getElementById("artifactCategory");
+      if (categorySelect && categorySelect.options[0]) {
+        categorySelect.options[0].text = t.selectCategory;
+      }
+    }
+
+    /* Tab Switching */
+    function switchTab(tabId) {
+      // Allow Discover for everyone; restrict everything else.
+      if ((tabId === 'uploadTab' || tabId === 'approveTab' || tabId === 'mySubmissionsTab') && !isLoggedIn) {
+        alert("Please login as a licensed archaeologist to access this feature.");
+        return;
+      }
+
+      document.querySelectorAll(".container").forEach(container => {
+        container.classList.remove("active");
+      });
+      document.querySelectorAll(".tab").forEach(tab => {
+        tab.classList.remove("active");
+      });
+
+      const container = document.getElementById(tabId);
+      if (container) container.classList.add("active");
+
+      const tab = document.querySelector(`[data-tab="${tabId}"]`);
+      if (tab) tab.classList.add("active");
+
+      if (tabId === 'approveTab') {
+        if (currentUser && currentUser.username === 'expert') {
+          loadPendingArtifacts();
+        } else {
+          alert('Only expert reviewers can access the approval queue.');
+          return;
+        }
+      }
+      if (tabId === 'mySubmissionsTab') {
+        loadMySubmissions();
+      }
+    }
+
+    /* Login Functionality */
+    function login(event) {
+      event.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+      const errorDiv = document.getElementById("loginError");
+      
+      const user = licensedArchaeologists.find(u => u.username === username && u.password === password);
+      
+      if (user) {
+        isLoggedIn = true;
+        currentUser = user;
+        document.getElementById("loginScreen").style.display = "none";
+        document.getElementById("mainApp").style.display = "block";
+        document.getElementById("userInfo").innerText = `${user.name} (License: ${user.license})`;
+        errorDiv.style.display = "none";
+
+        // Only show Approval Queue tab for expert reviewer
+        const approveTabEl = document.querySelector('[data-tab="approveTab"]');
+        if (approveTabEl) {
+          approveTabEl.style.display = (user.username === 'expert') ? '' : 'none';
+        }
+
+        loadApprovedArtifacts();
+      } else {
+        errorDiv.style.display = "block";
+        errorDiv.innerText = "Invalid credentials. Please check your username and password.";
+      }
+    }
+    
+    /* Logout Functionality */
+    function logout() {
+      if (confirm("Are you sure you want to logout?")) {
+        isLoggedIn = false;
+        currentUser = null;
+        document.getElementById("mainApp").style.display = "none";
+        document.getElementById("loginScreen").style.display = "flex";
+        document.getElementById("loginForm").reset();
+
+        // Reset: hide Approval Queue tab until an expert logs in again
+        const approveTabEl = document.querySelector('[data-tab="approveTab"]');
+        if (approveTabEl) approveTabEl.style.display = 'none';
+
+        switchTab("discoverTab");
+      }
+    }
+
+    /* Load approved artifacts from backend */
+    async function loadApprovedArtifacts() {
+      try {
+        const response = await fetch(`${API_BASE}/artifacts/approved`);
+        if (response.ok) {
+          approvedArtifacts = await response.json();
+        }
+      } catch (error) {
+        console.error("Error loading artifacts:", error);
+      }
+    }
+
+    /* Load pending artifacts from backend */
+    async function loadPendingArtifacts() {
+      try {
+        const response = await fetch(`${API_BASE}/artifacts/pending`);
+        if (response.ok) {
+          pendingArtifacts = await response.json();
+          displayPendingArtifacts();
+        }
+      } catch (error) {
+        console.error("Error loading pending artifacts:", error);
+      }
+    }
+
+    /* Load my submissions from backend */
+    async function loadMySubmissions() {
+      if (!isLoggedIn || !currentUser) return;
+      try {
+        const response = await fetch(`${API_BASE}/artifacts/mine?user=${encodeURIComponent(currentUser.name)}`);
+        if (response.ok) {
+          const myArtifacts = await response.json();
+          displayMySubmissions(myArtifacts);
+        }
+      } catch (error) {
+        console.error('Error loading my submissions:', error);
+      }
+    }
+
+    /* Image Search Functionality */
+    async function searchByImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const resultsDiv = document.getElementById("searchResults");
+      resultsDiv.innerHTML = '<div class="status">🔍 Analyzing image using AI-powered visual recognition...</div>';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch(`${API_BASE}/search/image`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          displayImageSearchResults(data, file);
+        } else {
+          resultsDiv.innerHTML = '<div class="status">Error analyzing image. Please try again.</div>';
+        }
+      } catch (error) {
+        console.error("Error searching by image:", error);
+        resultsDiv.innerHTML = '<div class="status">Error processing image.</div>';
+      }
+    }
+
+    /* Display image search results */
+    function displayImageSearchResults(data, file) {
+      const resultsDiv = document.getElementById("searchResults");
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        const imgDataUrl = e.target.result;
+        let html = '<div style="margin-bottom: 20px;">';
+        html += '<h3>📸 Image Search Results</h3>';
+        html += '<div style="display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap;">';
+        html += `<div style="flex: 0 0 300px;">`;
+        html += `<img src="${imgDataUrl}" style="width: 100%; border-radius: 8px; border: 2px solid #667eea;" />`;
+        html += '<p style="text-align: center; color: #666; margin-top: 10px;"><strong>Your Image</strong></p>';
+        html += '</div>';
+        html += '<div style="flex: 1; min-width: 300px;">';
+        html += '<p><strong>🤖 AI Analysis:</strong></p>';
+        html += '<p style="background: #f0f4ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">';
+        html += data.analysis;
+        html += '</p></div></div>';
+        
+        if (data.matches && data.matches.length > 0) {
+          html += `<p style="color: #28a745; font-weight: 600;">✓ Found ${data.matches.length} potential match(es) in verified database:</p>`;
+          
+          data.matches.forEach(artifact => {
+            html += `
+              <div class="search-result">
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                  <div style="flex: 1; min-width: 250px;">
+                    <h3>${artifact.name} <span class="badge badge-verified">Verified ✓</span></h3>
+                    <p><strong>Description:</strong> ${artifact.description}</p>
+                    <p><strong>Category:</strong> ${artifact.category}</p>
+                    <p><strong>Location:</strong> ${artifact.location}</p>
+                    <p class="citation">📚 <strong>Citation:</strong> ${artifact.citation || 'Database entry'}</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+        } else {
+          html += '<p class="status">No exact matches found in the verified database.</p>';
+        }
+        
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+      };
+      
+      reader.readAsDataURL(file);
+    }
+
+    /* Search Functionality with RAG */
+    let currentSearchController = null;
+    let isSearching = false;
+
+    async function searchArtifacts() {
+      const query = document.getElementById("searchInput").value.trim();
+      const resultsDiv = document.getElementById("searchResults");
+      const searchBtn = document.getElementById("searchButton") || document.getElementById("searchDbButton");
+
+      // Cancel any in-flight search
+      try { currentSearchController?.abort(); } catch (_) {}
+
+      // Always clear previous results immediately so stale results never remain visible
+      resultsDiv.innerHTML = '';
+
+      if (!query) {
+        resultsDiv.innerHTML = `<p class="status">${translations[currentLanguage].noResults}</p>`;
+        return;
+      }
+
+      isSearching = true;
+      if (searchBtn) searchBtn.disabled = true;
+
+      resultsDiv.innerHTML = '<div class="status">🔍 Searching verified database using semantic search...</div>';
+
+      currentSearchController = new AbortController();
+
+      try {
+        const response = await fetch(`${API_BASE}/search/text`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+          signal: currentSearchController.signal
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          displaySearchResults({ query, ...data });
+        } else {
+          // Do not show any previous result on errors
+          resultsDiv.innerHTML = '<div class="status">Error performing search.</div>';
+        }
+      } catch (error) {
+        if (error && error.name === 'AbortError') {
+          return;
+        }
+        console.error("Error searching:", error);
+        resultsDiv.innerHTML = '<div class="status">Error performing search.</div>';
+      } finally {
+        isSearching = false;
+        if (searchBtn) searchBtn.disabled = false;
+        currentSearchController = null;
+      }
+    }
+
+    /* Display search results */
+    function displaySearchResults(data) {
+      const resultsDiv = document.getElementById("searchResults");
+      resultsDiv.innerHTML = '';
+
+      const results = (data && Array.isArray(data.results)) ? data.results : [];
+
+      // If there are no matches, explicitly show 'No matches' and nothing else.
+      if (!results || results.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="status">
+            <p><strong>No matches found.</strong></p>
+            <p>Try using different keywords.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const artifact = results[0];
+      let html = '<div style="margin-bottom: 20px;"><h3>🔍 Search Result - Verified Data</h3>';
+      html += '<p style="color: #666; margin-bottom: 20px;">Showing the best match from the verified database.</p>';
+
+      html += `
+        <div class="search-result">
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 250px;">
+              <h3>${artifact.name} <span class="badge badge-verified">Verified ✓</span></h3>
+              <p><strong>Description:</strong> ${artifact.description}</p>
+              <p><strong>Category:</strong> ${artifact.category}</p>
+              <p><strong>Location:</strong> ${artifact.location}</p>
+              <p class="citation">📚 <strong>Citation:</strong> ${artifact.citation || 'Database entry'}</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      html += '</div>';
+      resultsDiv.innerHTML = html;
+    }
+
+    /* Display Pending Artifacts for Approval */
+    function displayPendingArtifacts() {
+      const t = translations[currentLanguage];
+      const queueDiv = document.getElementById("approvalQueue");
+      if (!queueDiv) return;
+      
+      if (pendingArtifacts.length === 0) {
+        queueDiv.innerHTML = `<div class="success-message">${t.allReviewed}</div>`;
+        return;
+      }
+      
+      let html = `<h3>${t.pendingSubmissions} <span class="badge badge-pending">${pendingArtifacts.length}</span></h3>`;
+      html += `<p class="instructions">${t.reviewInstructions}</p>`;
+      
+      pendingArtifacts.forEach(artifact => {
+        const isPending = artifact.status === 'pending';
+        const isRejected = artifact.status === 'rejected';
+        
+        html += `
+          <div class="pending-item ${isRejected ? 'rejected-item' : ''}">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
+              <div style="flex: 1;">
+                <h4>${artifact.name} ${isRejected ? `<span class="badge" style="background: #dc3545;">${t.rejected}</span>` : `<span class="badge badge-pending">${t.pendingReview}</span>`}</h4>
+                <p><strong>${t.description}</strong> ${artifact.description}</p>
+                <p><strong>${t.category}</strong> ${artifact.category}</p>
+                <p><strong>${t.location}</strong> ${artifact.location}</p>
+                <p><strong>${t.uploadedBy}</strong> ${artifact.uploadedBy} ${t.on} ${artifact.date}</p>
+                ${isRejected && artifact.rejectionReason ? `<p style="color: #dc3545; margin-top: 10px;"><strong>${t.rejectionReason}</strong> ${artifact.rejectionReason}</p>` : ''}
+              </div>
+            </div>
+            ${isPending ? `
+              <div class="approval-buttons">
+                <button class="btn-success" onclick="approveArtifact(${artifact.id})">${t.approveVerify}</button>
+                <button class="btn-danger" onclick="rejectArtifact(${artifact.id})">${t.rejectBtn}</button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      });
+      
+      queueDiv.innerHTML = html;
+    }
+
+    /* Display My Submissions */
+    function displayMySubmissions(artifacts) {
+      const t = translations[currentLanguage];
+      const listDiv = document.getElementById('mySubmissionsList');
+      if (!listDiv) return;
+      if (!artifacts || artifacts.length === 0) {
+        listDiv.innerHTML = `<div class="status">No submissions found.</div>`;
+        return;
+      }
+      let html = '<ul style="list-style:none;padding:0;">';
+      artifacts.forEach(artifact => {
+        html += `<li style="margin-bottom:20px;padding:20px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
+          <h4>${artifact.name}</h4>
+          <p><strong>${t.description}</strong> ${artifact.description}</p>
+          <p><strong>${t.category}</strong> ${artifact.category}</p>
+          <p><strong>${t.location}</strong> ${artifact.location}</p>
+          <p><strong>Status:</strong> <span class="badge ${artifact.status === 'approved' ? 'badge-approved' : artifact.status === 'rejected' ? 'badge-danger' : 'badge-pending'}">${artifact.status.charAt(0).toUpperCase() + artifact.status.slice(1)}</span></p>
+          ${artifact.status === 'rejected' && artifact.rejectionReason ? `<p style="color:#dc3545;"><strong>Reason:</strong> ${artifact.rejectionReason}</p>` : ''}
+        </li>`;
+      });
+      html += '</ul>';
+      listDiv.innerHTML = html;
+    }
+
+    /* Approve Artifact */
+    async function approveArtifact(id) {
+      if (!confirm("Are you sure you want to approve this artifact?")) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/artifacts/${id}/approve`, {
+          method: 'POST'
+        });
+
+        if (response.ok) {
+          alert("✓ Artifact has been approved and added to the verified database!");
+          loadPendingArtifacts();
+        } else {
+          alert("Error approving artifact");
+        }
+      } catch (error) {
+        console.error("Error approving artifact:", error);
+      }
+    }
+
+    /* Reject Artifact */
+    async function rejectArtifact(id) {
+      const reason = prompt("Please provide a reason for rejecting this artifact:");
+      if (!reason) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/artifacts/${id}/reject`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason })
+        });
+
+        if (response.ok) {
+          alert("✓ Artifact has been rejected.");
+          loadPendingArtifacts();
+        } else {
+          alert("Error rejecting artifact");
+        }
+      } catch (error) {
+        console.error("Error rejecting artifact:", error);
+      }
+    }
+
+    /* Excel Upload Handler */
+    async function handleExcelUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const artifacts = XLSX.utils.sheet_to_json(sheet);
+          
+          // Send to backend
+          const response = await fetch(`${API_BASE}/artifacts/bulk`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              artifacts,
+              uploadedBy: currentUser.name,
+              license: currentUser.license
+            })
+          });
+
+          if (response.ok) {
+            alert(`✓ ${artifacts.length} artifact(s) imported and added to approval queue!`);
+            event.target.value = '';
+            loadPendingArtifacts();
+          } else {
+            alert("Error importing artifacts");
+          }
+        } catch (error) {
+          alert("Error reading Excel file. Please check the format.");
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    /* Submit New Artifact */
+    async function submitArtifact(event) {
+      event.preventDefault();
+      
+      if (!isLoggedIn) {
+        alert("Please login to submit artifacts.");
+        return;
+      }
+
+      const name = document.getElementById("artifactName").value;
+      const description = document.getElementById("artifactDescription").value;
+      const category = document.getElementById("artifactCategory").value;
+      const location = document.getElementById("artifactLocation").value;
+      const imagesInput = document.getElementById("artifactImages");
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("category", category);
+      formData.append("location", location);
+      formData.append("uploadedBy", currentUser.name);
+      formData.append("license", currentUser.license);
+      formData.append("date", new Date().toLocaleDateString());
+      if (imagesInput && imagesInput.files.length > 0) {
+        for (let i = 0; i < imagesInput.files.length; i++) {
+          formData.append("images", imagesInput.files[i]); // Ensure key is 'images' for backend
+        }
+      }
+      try {
+        const response = await fetch(`${API_BASE}/artifacts`, {
+          method: 'POST',
+          body: formData
+        });
+        if (response.ok) {
+          document.getElementById("uploadForm").reset();
+          const successDiv = document.getElementById("uploadSuccess");
+          successDiv.innerHTML = `
+            <div class=\"success-message\">
+              ✓ \"${name}\" has been submitted to the staging area for expert review!<br>
+              <small>Status: Pending verification by archaeology department</small>
+            </div>
+          `;
+          loadPendingArtifacts();
+          loadMySubmissions();
+          setTimeout(() => {
+            successDiv.innerHTML = '';
+          }, 7000);
+        } else {
+          let errorMsg = "Error submitting artifact.";
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.error) {
+              errorMsg += `\n${errorData.error}`;
+            }
+            console.error("Submission error response:", errorData);
+          } catch (parseErr) {
+            console.error("Error parsing error response:", parseErr);
+          }
+          alert(errorMsg);
+        }
+      } catch (error) {
+        console.error("Error submitting artifact:", error);
+        alert("Error submitting artifact. Please check your network and try again.");
+      }
+    }
+
+    /* Initialize on Page Load */
+    window.onload = function () {
+      updateLanguage();
+
+      // Public can browse/search without login
+      document.getElementById("loginScreen").style.display = "none";
+      document.getElementById("mainApp").style.display = "block";
+
+      // Ensure we start on Discover
+      switchTab('discoverTab');
+
+      // Ensure handlers are only registered once
+      const searchInput = document.getElementById("searchInput");
+      const searchBtn = document.getElementById("searchButton") || document.getElementById("searchDbButton");
+
+      if (searchInput) {
+        // When the user edits the query, clear old results to avoid confusion.
+        searchInput.addEventListener("input", function () {
+          const resultsDiv = document.getElementById("searchResults");
+          if (resultsDiv) resultsDiv.innerHTML = '';
+
+          // If a search is currently in-flight, cancel it.
+          try { currentSearchController?.abort(); } catch (_) {}
+        }, { passive: true });
+
+        // Use keydown (more reliable than keypress) and prevent repeat firing.
+        searchInput.addEventListener("keydown", function (event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            if (searchBtn && searchBtn.disabled) return;
+            searchArtifacts();
+          }
+        });
+      }
+    };
+  </script>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen">
+    <div class="login-container">
+      <h1>🏛️ ArchSearch</h1>
+      <p class="subtitle">Verified Archaeological Database System</p>
+      <p style="text-align: center; color: #666; margin-bottom: 20px;">Licensed Archaeologist Login</p>
+      
+      <div id="loginError" class="login-error"></div>
+      
+      <form id="loginForm" onsubmit="login(event)">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Enter your username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-primary">Login</button>
+      </form>
+      <p style="text-align: center; margin-top: 20px; font-size: 0.85em; color: #666;">
+        📖 Search is open to everyone • Upload requires login
+      </p>
+      <div class="demo-credentials">
+        <h4>Demo Credentials:</h4>
+        <p><strong>Archaeologist:</strong> <code>dr.rodriguez</code> / <code>demo123</code></p>
+        <p><strong>Expert:</strong> <code>expert</code> / <code>expert123</code></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App (after login) -->
+  <div id="mainApp">
+    <!-- Navbar -->
+    <div class="navbar">
+      <h1>ArchSearch</h1>
+      <div class="navbar-right">
+        <select id="languageSelect" onchange="changeLanguage()">
+          <option value="en">English</option>
+          <option value="es">Español</option>
+        </select>
+        <span id="userInfo" class="user-badge"></span>
+        <button class="btn-primary" onclick="logout()">
+          <i class="fas fa-sign-out-alt"></i> <span id="logoutButton">Logout</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs Section -->
+    <div class="tabs">
+      <div class="tab active" data-tab="discoverTab" onclick="switchTab('discoverTab')">
+        <span id="discoverTabText">🔍 Discover Artifacts</span>
+      </div>
+      <div class="tab" data-tab="uploadTab" onclick="switchTab('uploadTab')">
+        <span id="uploadTabText">📤 Upload Artifacts</span>
+      </div>
+      <div class="tab" data-tab="approveTab" onclick="switchTab('approveTab')">
+        <span id="approveTabText">✅ Approval Queue</span>
+      </div>
+      <div class="tab" data-tab="mySubmissionsTab" onclick="switchTab('mySubmissionsTab')">
+        <span id="mySubmissionsTabText">📄 My Submissions</span>
+      </div>
+    </div>
+
+    <!-- Discover Tab (default) -->
+    <div id="discoverTab" class="container active">
+      <h1 id="discoverHeader">🔍 Discover Artifacts</h1>
+      <p id="discoverDesc" class="instructions">
+        Search our verified archaeological database using natural language or upload an image for AI-powered visual recognition.
+      </p>
+      
+      <!-- Search Box -->
+      <div class="form-group">
+        <input type="text" id="searchInput" placeholder="Search for artifacts (e.g., Mesoamerican Pottery, fossils, ancient texts)" />
+      </div>
+      <button class="btn-primary" id="searchButton" onclick="searchArtifacts()">
+        <i class="fas fa-search"></i> <span id="searchButtonText">Search</span>
+      </button>
+      
+      <!-- Search Results -->
+      <div id="searchResults"></div>
+    </div>
+
+    <!-- Upload Tab -->
+    <div id="uploadTab" class="container">
+      <h1 id="uploadTitle">📤 Upload New Artifact</h1>
+      <p id="uploadInstructions" class="instructions">
+        Licensed archaeologists can upload artifacts here. All submissions will be reviewed by our expert panel before being added to the verified database.
+      </p>
+      
+      <div class="upload-area" onclick="document.getElementById('excelUpload').click()">
+        <h3 id="bulkUploadHeader">📊 Bulk Upload via Excel</h3>
+        <p id="bulkUploadText">Click to upload an Excel file with multiple artifacts</p>
+        <p style="font-size: 0.85em; color: #666;" id="bulkUploadRequired">Required columns: Name, Description, Category, Location</p>
+        <input type="file" id="excelUpload" accept=".xls,.xlsx" onchange="handleExcelUpload(event)" style="display: none;">
+      </div>
+      
+      <h3 style="text-align: center; color: #999; margin: 20px 0;" id="orSeparator">— OR —</h3>
+      
+      <h3 id="manualUploadHeader">📝 Manual Upload</h3>
+      <form id="uploadForm" onsubmit="submitArtifact(event)">
+        <div class="form-group">
+          <label for="artifactName" id="artifactNameLabel">Artifact Name *</label>
+          <input type="text" id="artifactName" placeholder="e.g., Ancient Mayan Calendar Stone" required>
+        </div>
+        <div class="form-group">
+          <label for="artifactDescription" id="descriptionLabel">Description *</label>
+          <textarea id="artifactDescription" rows="4" placeholder="Detailed description of the artifact..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="artifactCategory" id="categoryLabel">Category *</label>
+          <select id="artifactCategory" required>
+            <option value="">Select Category</option>
+            <option value="Fossil">Fossil</option>
+            <option value="Artifact">Artifact</option>
+            <option value="Document">Document</option>
+            <option value="Pottery">Pottery</option>
+            <option value="Tool">Tool</option>
+            <option value="Structure">Structure</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="artifactLocation" id="locationLabel">Location *</label>
+          <input type="text" id="artifactLocation" placeholder="e.g., Tikal, Guatemala" required>
+        </div>
+        <div class="form-group">
+          <label for="artifactImages" id="uploadImagesLabel">Upload Images</label>
+          <input type="file" id="artifactImages" multiple accept="image/*">
+          <small id="uploadImagesHelp">You can upload multiple images. Tap to use iPad camera or select from gallery.</small>
+        </div>
+        <button id="uploadSubmitButton" class="btn-primary" type="submit">Submit to Staging Area for Review</button>
+      </form>
+      <div id="uploadSuccess"></div>
+    </div>
+
+    <!-- Approval Queue Tab -->
+    <div id="approveTab" class="container">
+      <h1 id="approveQueueHeader">✅ Approval Queue</h1>
+      <p class="instructions" id="approveQueueDesc">
+        <strong>Expert Review Panel:</strong> Review submitted artifacts before they are added to the verified database.
+      </p>
+      <div id="approvalQueue">
+        <!-- Pending artifacts will be displayed here -->
+      </div>
+    </div>
+
+    <!-- My Submissions Tab -->
+    <div id="mySubmissionsTab" class="container">
+      <h1 id="mySubmissionsHeader">📄 My Submissions</h1>
+      <div id="mySubmissionsList"></div>
+    </div>
+
+    <!-- Copyright and Disclaimer Footer -->
+    <div class="copyright-footer">
+      <h3 id="termsTitle">⚖️ Terms of Use & Copyright Disclaimer</h3>
+      <div class="disclaimer">
+        <p id="copyrightText"><strong>© 2025 ArchSearch Platform. All rights reserved.</strong></p>
+        <p id="footerText"><strong>ArchSearch Platform</strong> - Verified Archaeological Database System<br>Prototype Demo • Version 1.0 • January 2026</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
