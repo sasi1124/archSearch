@@ -111,3 +111,35 @@ graph TD
     .venv/bin/python backend/app.py
     ```
 5.  **Open the `archSearch.html` file in your web browser** to use the application!
+
+---
+
+## Inspecting the Data
+
+If you want to see the raw data stored in the database or the vector index, you can use these commands from your terminal.
+
+### Viewing the SQLite Database (`archsearch.db`)
+
+This lets you see the tables of approved and pending artifacts.
+
+1.  Open the database file using the `sqlite3` command-line tool:
+    ```bash
+    sqlite3 backend/archsearch.db
+    ```
+2.  Once you're inside the SQLite prompt (`sqlite>`), you can run SQL queries. For example:
+    ```sql
+    -- See all approved artifacts
+    SELECT * FROM approved;
+
+    -- See all pending artifacts
+    SELECT * FROM pending;
+    ```
+3.  To exit the SQLite prompt, type `.quit`.
+
+### Viewing the FAISS Vector Index (`artifact_vectors.index`)
+
+This runs a script that tells you how many vectors are in the index and what their dimension is.
+
+```bash
+.venv/bin/python backend/inspect_index.py
+```
