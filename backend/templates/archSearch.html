@@ -882,6 +882,7 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
         }
 
         loadApprovedArtifacts();
+        switchTab('discoverTab'); // Go to discover tab after login
       } else {
         errorDiv.style.display = "block";
         errorDiv.innerText = "Invalid credentials. Please check your username and password.";
@@ -1334,12 +1335,9 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
     window.onload = function () {
       updateLanguage();
 
-      // Public can browse/search without login
-      document.getElementById("loginScreen").style.display = "none";
-      document.getElementById("mainApp").style.display = "block";
-
-      // Ensure we start on Discover
-      switchTab('discoverTab');
+      // Show login screen by default
+      document.getElementById("loginScreen").style.display = "flex";
+      document.getElementById("mainApp").style.display = "none";
 
       // Ensure handlers are only registered once
       const searchInput = document.getElementById("searchInput");

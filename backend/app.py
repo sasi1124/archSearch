@@ -52,7 +52,7 @@ def init_db():
     conn.close()
 
 # --- FAISS Setup ---
-FAISS_INDEX_PATH = os.path.join(os.path.dirname(__file__), 'faiss.index')
+FAISS_INDEX_PATH = os.path.join(os.path.dirname(__file__), 'artifact_vectors.index')
 EMBEDDING_DIM = 384  # e.g., for MiniLM
 
 def get_faiss_index():
@@ -158,14 +158,25 @@ def approve_artifact(artifact_id):
     if not row:
         conn.close()
         return jsonify({'error': 'Not found'}), 404
-    # Move to approved
+
+    # Move to approved table and get the new ID
     c.execute('''INSERT INTO approved (name, description, category, location, uploadedBy, license, date, citation)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
               (row['name'], row['description'], row['category'], row['location'], row['uploadedBy'], row['license'], row['date'], 'Verified by Expert Panel'))
+    new_id = c.lastrowid
+
+    # Add to FAISS index
+    index = get_faiss_index()
+    text_to_embed = f"{row['name']} {row['description']}"
+    embedding = embed_text(text_to_embed)
+    index.add_with_ids(np.array([embedding], dtype=np.float32), np.array([new_id], dtype=np.int64))
+    save_faiss_index(index)
+
+    # Delete from pending
     c.execute('DELETE FROM pending WHERE id=?', (artifact_id,))
     conn.commit()
     conn.close()
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'new_id': new_id})
 
 @app.route('/api/artifacts/<int:artifact_id>/reject', methods=['POST'])
 def reject_artifact(artifact_id):
@@ -181,56 +192,43 @@ def reject_artifact(artifact_id):
 def search_text():
     data = request.json or {}
     query = (data.get('query') or '').strip()
+    k = data.get('k', 5) # Number of results to return
 
     if not query:
         return jsonify({'results': []})
 
-    # Load approved artifacts
+    # Load index
+    index = get_faiss_index()
+    if index.ntotal == 0:
+        return jsonify({'results': []})
+
+    # Embed query and search
+    query_embedding = embed_text(query)
+    distances, ids = index.search(np.array([query_embedding], dtype=np.float32), k)
+
+    # Get artifact details from DB
+    if len(ids[0]) == 0:
+        return jsonify({'results': []})
+
     conn = get_db()
     c = conn.cursor()
-    c.execute('SELECT * FROM approved')
+    # The IDs from FAISS are in a nested list, e.g., [[1, 5, 3]]
+    found_ids = [int(i) for i in ids[0] if i >= 0] # FAISS can return -1 for no result
+    if not found_ids:
+        conn.close()
+        return jsonify({'results': []})
+
+    # Create a placeholder string for the IN clause
+    placeholders = ','.join('?' for _ in found_ids)
+    c.execute(f'SELECT * FROM approved WHERE id IN ({placeholders})', found_ids)
     artifacts = [dict(row) for row in c.fetchall()]
     conn.close()
 
-    if not artifacts:
-        return jsonify({'results': []})
+    # Sort results by the order returned by FAISS
+    id_to_artifact = {art['id']: art for art in artifacts}
+    sorted_artifacts = [id_to_artifact[i] for i in found_ids if i in id_to_artifact]
 
-    # Always rebuild the index from the current DB (small prototype; keeps it correct)
-    index = faiss.IndexFlatL2(EMBEDDING_DIM)
-
-    def _artifact_text(a: dict) -> str:
-        # Use multiple fields so searches work even with short/odd descriptions.
-        return ' '.join([
-            str(a.get('name') or ''),
-            str(a.get('description') or ''),
-            str(a.get('category') or ''),
-            str(a.get('location') or ''),
-        ]).strip()
-
-    vectors = np.stack([embed_text(_artifact_text(a)) for a in artifacts]).astype('float32')
-    index.add(vectors)
-    save_faiss_index(index)
-
-    # Search
-    q_emb = embed_text(query)
-    k = min(5, len(artifacts))
-    D, I = index.search(np.expand_dims(q_emb, 0), k)
-
-    # Convert L2 distance to a rough similarity score in [0,1].
-    # (score = 1/(1+d))
-    best_i = int(I[0][0])
-    best_d = float(D[0][0])
-    best_score = 1.0 / (1.0 + best_d)
-
-    # Heuristic threshold to avoid returning "some" result for irrelevant queries.
-    # Tune as needed.
-    MIN_SCORE = 0.48
-
-    if best_score < MIN_SCORE or best_i >= len(artifacts):
-        return jsonify({'results': []})
-
-    # Return only the best match (frontend expects/uses top result)
-    return jsonify({'results': [artifacts[best_i]]})
+    return jsonify({'results': sorted_artifacts})
 
 @app.route('/api/search/image', methods=['POST'])
 def search_image():
