@@ -619,7 +619,9 @@ margin: 20px auto;
   </style>
   <script>
     /* Configuration */
-    const API_BASE = "http://127.0.0.1:5000/api";
+    // Use same-origin API base so port changes (e.g., 5000 -> 5050) don't break fetch calls.
+    // This also avoids CORS issues by keeping UI and API on the same origin.
+    const API_BASE = `${window.location.origin}/api`;
     
     /* State Variables and Data */
     let
@@ -1003,6 +1005,12 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
 
     /* Image Search Functionality */
     async function searchByImage(event) {
+      // Ensure we're showing Discover results only
+      try { switchTab('discoverTab'); } catch (_) {}
+
+      const mySubs = document.getElementById('mySubmissionsList');
+      if (mySubs) mySubs.innerHTML = '';
+
       const file = event.target.files[0];
       if (!file) return;
       
@@ -1033,6 +1041,11 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
     /* Display image search results */
     function displayImageSearchResults(data, file) {
       const resultsDiv = document.getElementById("searchResults");
+
+      // Ensure Discover results only show image-search output (avoid mixing with other tab content)
+      const mySubs = document.getElementById('mySubmissionsList');
+      if (mySubs) mySubs.innerHTML = '';
+
       const reader = new FileReader();
 
       reader.onload = function(e) {
@@ -1047,35 +1060,50 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
         html += '<div style="flex: 1; min-width: 300px;">';
         html += '<p><strong>🤖 AI Analysis:</strong></p>';
         html += '<p style="background: #f0f4ff; padding: 15px; border-radius: 8px; border-left: 4px solid #667eea;">';
-        html += data.analysis;
+        html += 'Searching the verified image index for visually similar artifacts (confidence ≥ 50%).';
         html += '</p></div></div>';
-        
-        if (data.matches && data.matches.length > 0) {
-          html += `<p style="color: #28a745; font-weight: 600;">✓ Found ${data.matches.length} potential match(es) in verified database:</p>`;
-          
-          data.matches.forEach(artifact => {
+
+        const matches = (data && Array.isArray(data.matches)) ? data.matches : [];
+
+        if (matches.length > 0) {
+          html += `<p style="color: #28a745; font-weight: 600;">✓ Found ${matches.length} match(es) in verified database:</p>`;
+
+          matches.forEach(artifact => {
+            const conf = (typeof artifact.confidence === 'number') ? artifact.confidence : null;
+            const confBadge = (conf === null) ? '' : `<span class="confidence ${confidenceClass(conf)}">Confidence: ${conf}%</span>`;
+
+            const imgs = Array.isArray(artifact.images) ? artifact.images : [];
+            const gallery = imgs.length
+              ? `
+                <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+                  ${imgs.map(src => `<img src="${src}" alt="artifact image" style="width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #e0e0e0;" />`).join('')}
+                </div>
+              `
+              : '';
+
             html += `
               <div class="search-result">
                 <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                   <div style="flex: 1; min-width: 250px;">
-                    <h3>${artifact.name} <span class="badge badge-verified">Verified ✓</span></h3>
+                    <h3>${artifact.name} ${confBadge} <span class="badge badge-verified">Verified ✓</span></h3>
                     <p><strong>Description:</strong> ${artifact.description}</p>
                     <p><strong>Category:</strong> ${artifact.category}</p>
                     <p><strong>Location:</strong> ${artifact.location}</p>
                     <p class="citation">📚 <strong>Citation:</strong> ${artifact.citation || 'Database entry'}</p>
+                    ${gallery}
                   </div>
                 </div>
               </div>
             `;
           });
         } else {
-          html += '<p class="status">No exact matches found in the verified database.</p>';
+          html += '<p class="status">No matches found with confidence ≥ 50%.</p>';
         }
-        
+
         html += '</div>';
         resultsDiv.innerHTML = html;
       };
-      
+
       reader.readAsDataURL(file);
     }
 
@@ -1260,11 +1288,28 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
       artifacts.forEach(artifact => {
         const status = artifact.status || 'pending';
         const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+
+        // Images are stored as a comma-separated filename list in SQLite.
+        // Convert to static URLs so users can see what they uploaded.
+        const imgCsv = artifact.images || '';
+        const imgs = (typeof imgCsv === 'string')
+          ? imgCsv.split(',').map(s => s.trim()).filter(Boolean)
+          : (Array.isArray(imgCsv) ? imgCsv : []);
+
+        const gallery = imgs.length
+          ? `
+            <div style="margin-top: 10px; display:flex; gap:10px; flex-wrap:wrap;">
+              ${imgs.map(fn => `<img src="/static/images/${fn}" alt="uploaded image" style="width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #e0e0e0;" />`).join('')}
+            </div>
+          `
+          : '';
+
         html += `<li style="margin-bottom:20px;padding:20px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
           <h4>${artifact.name}</h4>
           <p><strong>${t.description}</strong> ${artifact.description}</p>
           <p><strong>${t.category}</strong> ${artifact.category}</p>
           <p><strong>${t.location}</strong> ${artifact.location}</p>
+          ${gallery}
           <p><strong>Status:</strong> <span class="badge ${status === 'approved' ? 'badge-approved' : status === 'rejected' ? 'badge-danger' : 'badge-pending'}">${statusLabel}</span></p>
           ${status === 'rejected' && artifact.rejectionReason ? `<p style="color:#dc3545;"><strong>Reason:</strong> ${artifact.rejectionReason}</p>` : ''}
           ${status === 'rejected' ? `
@@ -1847,6 +1892,22 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
       <div class="form-group">
         <input type="text" id="searchInput" placeholder="Search for artifacts (e.g., Mesoamerican Pottery, fossils, ancient texts)" />
       </div>
+
+      <!-- Image Search (camera / upload) -->
+      <div class="form-group" style="margin-top: 10px;">
+        <label for="discoverImageSearch" style="margin-bottom: 6px;">Image Search</label>
+        <input
+          type="file"
+          id="discoverImageSearch"
+          accept="image/*"
+          capture="environment"
+          onchange="searchByImage(event)"
+        />
+        <small style="color:#666; display:block; margin-top:6px;">
+          On mobile, this can open the camera (if supported) or let you pick from your photos.
+        </small>
+      </div>
+
       <button class="btn-primary" id="searchButton" onclick="searchArtifacts()">
         <i class="fas fa-search"></i> <span id="searchButtonText">Search</span>
       </button>
@@ -1882,7 +1943,7 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
           <textarea id="artifactDescription" rows="4" placeholder="Detailed description of the artifact..." required></textarea>
         </div>
         <div class="form-group">
-          <label for="artifactCategory" id="categoryLabel">Category *</label>
+                   <label for="artifactCategory" id="categoryLabel">Category *</label>
           <select id="artifactCategory" required>
             <option value="">Select Category</option>
             <option value="Fossil">Fossil</option>

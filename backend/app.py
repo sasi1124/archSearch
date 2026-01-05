@@ -5,9 +5,9 @@ from flask_cors import CORS
 import faiss
 import numpy as np
 from werkzeug.utils import secure_filename
-
-# NEW: real embeddings
 from sentence_transformers import SentenceTransformer
+
+from PIL import Image
 
 # --- Config ---
 DB_PATH = os.path.join(os.path.dirname(__file__), 'archsearch.db')
@@ -41,6 +41,7 @@ def init_db():
         license TEXT,
         date TEXT,
         images TEXT,
+        image_hashes TEXT,
         status TEXT DEFAULT 'pending',
         rejectionReason TEXT
     )''')
@@ -55,13 +56,34 @@ def init_db():
         license TEXT,
         date TEXT,
         images TEXT,
+        image_hashes TEXT,
         citation TEXT
     )''')
+
+    # --- Lightweight migrations for existing DBs (SQLite can't ALTER ADD COLUMN in CREATE IF NOT EXISTS) ---
+    def _ensure_column(table: str, col: str, col_type: str = 'TEXT'):
+        c.execute(f"PRAGMA table_info({table})")
+        cols = {r[1] for r in c.fetchall()}  # row[1] = name
+        if col not in cols:
+            c.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+
+    # Ensure newer columns exist even if DB was created with an older schema
+    _ensure_column('pending', 'images', 'TEXT')
+    _ensure_column('pending', 'image_hashes', 'TEXT')
+    _ensure_column('pending', 'status', "TEXT")
+    _ensure_column('pending', 'rejectionReason', 'TEXT')
+
+    _ensure_column('approved', 'images', 'TEXT')
+    _ensure_column('approved', 'image_hashes', 'TEXT')
+    _ensure_column('approved', 'citation', 'TEXT')
+
     conn.commit()
     conn.close()
 
 # --- FAISS Setup ---
 FAISS_INDEX_PATH = os.path.join(os.path.dirname(__file__), 'artifact_vectors.index')
+# Separate FAISS index for image embeddings
+IMAGE_INDEX_PATH = os.path.join(os.path.dirname(__file__), 'artifact_images.index')
 
 # Use a real embedding model
 EMBEDDING_MODEL_NAME = 'sentence-transformers/all-MiniLM-L6-v2'
@@ -115,20 +137,8 @@ def get_faiss_index():
 def save_faiss_index(index):
     faiss.write_index(index, FAISS_INDEX_PATH)
 
-# --- Embedding ---
-
-def embed_text(text: str) -> np.ndarray:
-    """Real semantic embedding using sentence-transformers.
-
-    Returns a float32 vector.
-    """
-    text = (text or '').strip()
-    if not text:
-        return np.zeros((get_embedding_dim(),), dtype=np.float32)
-
-    model = get_embedding_model()
-    vec = model.encode([text], normalize_embeddings=True)[0]
-    return np.asarray(vec, dtype=np.float32)
+# --- Image Embedding (ResNet18) ---
+# (removed: replaced with lightweight pHash-based image search)
 
 # --- Tokenization and Overlap Functions ---
 def _tokenize(text: str):
@@ -140,6 +150,67 @@ def _token_overlap(a: str, b: str) -> int:
     sa = set(_tokenize(a))
     sb = set(_tokenize(b))
     return len(sa.intersection(sb))
+
+# --- Image Similarity (pHash) ---
+PHASH_SIZE = 32  # internal hash image size
+
+
+def _phash_hex_from_pil(img: Image.Image) -> str:
+    """Compute a perceptual hash (pHash-like) hex string.
+
+    Note: We intentionally avoid heavy ML deps for stability in dev on macOS.
+    """
+    import numpy as _np
+
+    img = img.convert('L').resize((PHASH_SIZE, PHASH_SIZE), Image.Resampling.LANCZOS)
+    pixels = _np.asarray(img, dtype=_np.float32)
+
+    # Cheap frequency-domain signature (FFT) as a pHash surrogate
+    freq = _np.abs(_np.fft.fft2(pixels))
+    low = freq[:8, :8]
+
+    med = _np.median(low[1:, 1:])
+    bits = (low > med).flatten()
+
+    bit_str = ''.join('1' if b else '0' for b in bits)
+    return f"{int(bit_str, 2):0{len(bit_str)//4}x}"
+
+
+def _hamming_distance_hex(a: str, b: str) -> int:
+    try:
+        ia = int(a, 16)
+        ib = int(b, 16)
+    except Exception:
+        return 10**9
+
+    x = ia ^ ib
+    # Python 3.10+ has int.bit_count(); our venv is Python 3.9, so use a fallback.
+    try:
+        return x.bit_count()  # type: ignore[attr-defined]
+    except AttributeError:
+        return bin(x).count('1')
+
+
+def _phash_confidence(a: str, b: str) -> int:
+    """Map Hamming distance (8x8=64 bits) to 0..100 confidence."""
+    dist = _hamming_distance_hex(a, b)
+    max_bits = 64
+    dist = min(dist, max_bits)
+    return int(round((1.0 - (dist / max_bits)) * 100))
+
+def embed_text(text: str) -> np.ndarray:
+    """Return a normalized embedding for text using SentenceTransformers."""
+    model = get_embedding_model()
+    vec = model.encode([text or ""], normalize_embeddings=True)
+    return np.asarray(vec[0], dtype=np.float32)
+
+
+def _image_filenames_from_row(images_value) -> list[str]:
+    if not images_value:
+        return []
+    if isinstance(images_value, (list, tuple)):
+        return [str(x).strip() for x in images_value if str(x).strip()]
+    return [x.strip() for x in str(images_value).split(',') if x.strip()]
 
 # --- API Endpoints ---
 @app.route('/api/artifacts', methods=['POST'])
@@ -166,11 +237,22 @@ def submit_artifact():
                 img.save(save_path)
                 image_filenames.append(filename)
 
+    # Compute image hashes for later image search
+    image_hashes = []
+    if image_filenames:
+        static_dir = os.path.join(os.path.dirname(__file__), 'static', 'images')
+        for fn in image_filenames:
+            try:
+                img = Image.open(os.path.join(static_dir, fn))
+                image_hashes.append(_phash_hex_from_pil(img))
+            except Exception:
+                continue
+
     conn = get_db()
     c = conn.cursor()
-    c.execute('''INSERT INTO pending (name, description, category, location, uploadedBy, license, date, images)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-              (name, description, category, location, uploadedBy, license, date, ','.join(image_filenames)))
+    c.execute('''INSERT INTO pending (name, description, category, location, uploadedBy, license, date, images, image_hashes)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+              (name, description, category, location, uploadedBy, license, date, ','.join(image_filenames), ','.join(image_hashes)))
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'images': image_filenames})
@@ -204,13 +286,12 @@ def approve_artifact(artifact_id):
         return jsonify({'error': 'Not found'}), 404
 
     # Move to approved table and get the new ID
-    c.execute('''INSERT INTO approved (name, description, category, location, uploadedBy, license, date, images, citation)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-              (row['name'], row['description'], row['category'], row['location'], row['uploadedBy'], row['license'], row['date'], row['images'], 'Verified by Expert Panel'))
+    c.execute('''INSERT INTO approved (name, description, category, location, uploadedBy, license, date, images, image_hashes, citation)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+              (row['name'], row['description'], row['category'], row['location'], row['uploadedBy'], row['license'], row['date'], row['images'], row['image_hashes'], 'Verified by Expert Panel'))
     new_id = c.lastrowid
 
-    # Add to FAISS index (and persist). This is an incremental update so the index
-    # stays current immediately after approval.
+    # Add to FAISS text index (incremental update)
     index = get_faiss_index()
     if not isinstance(index, faiss.IndexIDMap) and not isinstance(index, faiss.IndexIDMap2):
         index = faiss.IndexIDMap2(index)
@@ -258,7 +339,7 @@ def search_text():
     # Exact match pass (case-insensitive) so short/new artifacts are searchable
     conn = get_db()
     c = conn.cursor()
-    c.execute('SELECT * FROM approved WHERE lower(name)=lower(?) ORDER BY id DESC LIMIT 1', (query,))
+    c.execute('SELECT * FROM approved WHERE lower(name)=lower(?) LIMIT 1', (query,))
     exact = c.fetchone()
     conn.close()
     if exact:
@@ -329,8 +410,70 @@ def search_text():
 
 @app.route('/api/search/image', methods=['POST'])
 def search_image():
-    # Stub: always returns empty
-    return jsonify({'analysis': 'Image search is not implemented in this prototype.', 'matches': []})
+    """Image search using perceptual hashes stored in SQLite.
+
+    Behavior:
+      - Compute a perceptual hash for the uploaded image.
+      - Compare against approved artifacts' stored image_hashes.
+      - Return only the single best match if it meets a minimum confidence.
+
+    This keeps results from feeling random for unrelated images.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'file is required'}), 400
+
+    f = request.files['file']
+    if not f or not f.filename:
+        return jsonify({'error': 'file is required'}), 400
+
+    try:
+        query_img = Image.open(f.stream)
+        qhash = _phash_hex_from_pil(query_img)
+    except Exception:
+        return jsonify({'error': 'Invalid image'}), 400
+
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('SELECT * FROM approved WHERE image_hashes IS NOT NULL AND image_hashes != ""')
+    rows = [dict(r) for r in c.fetchall()]
+    conn.close()
+
+    # Confidence threshold for returning a match. Increase to reduce random matches.
+    MIN_IMAGE_CONFIDENCE = 70
+
+    best = None
+    best_conf = -1
+
+    for row in rows:
+        hashes = [h.strip() for h in (row.get('image_hashes') or '').split(',') if h.strip()]
+        if not hashes:
+            continue
+
+        conf = max((_phash_confidence(qhash, h) for h in hashes), default=0)
+        if conf > best_conf:
+            best_conf = conf
+            best = row
+
+    if not best or best_conf < MIN_IMAGE_CONFIDENCE:
+        return jsonify({'matches': []})
+
+    imgs = (best.get('images') or '').split(',') if best.get('images') else []
+
+    match = {
+        'id': best.get('id'),
+        'name': best.get('name'),
+        'description': best.get('description'),
+        'category': best.get('category'),
+        'location': best.get('location'),
+        'uploadedBy': best.get('uploadedBy'),
+        'license': best.get('license'),
+        'date': best.get('date'),
+        'citation': best.get('citation') or 'Database entry',
+        'images': [f"/static/images/{i.strip()}" for i in imgs if i.strip()],
+        'confidence': int(best_conf),
+    }
+
+    return jsonify({'matches': [match]})
 
 @app.route('/api/artifacts/bulk', methods=['POST'])
 def bulk_upload():
@@ -493,4 +636,4 @@ def index():
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    app.run(debug=True, host="127.0.0.1", port=5050)
