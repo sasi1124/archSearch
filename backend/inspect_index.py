@@ -18,7 +18,7 @@ def inspect_faiss_index():
 
         print("--- FAISS Index Inspection ---")
         print(f"Index file: {os.path.basename(INDEX_PATH)}")
-        
+
         # Get the number of vectors in the index
         num_vectors = index.ntotal
         print(f"Number of vectors stored: {num_vectors}")
@@ -27,17 +27,21 @@ def inspect_faiss_index():
         vector_dim = index.d
         print(f"Vector dimension: {vector_dim}")
 
+        # If this is an IDMap, we can print the number of stored IDs
+        try:
+            if hasattr(index, 'id_map'):
+                # Some wrappers expose id_map
+                pass
+        except Exception:
+            pass
+
         if num_vectors > 0:
-            # You can't see the original text, but you can retrieve the vectors by their ID.
-            # For example, to see the vector for the artifact with ID 1:
+            # Many index types support reconstruct for flat indexes.
             try:
-                # Note: The reconstruct method may not be available for all index types.
-                # It works for IndexFlatL2 and IndexIDMap.
-                vector = index.reconstruct(0) # Reconstruct the first vector (ID 0)
-                print(f"Sample vector (first 10 dimensions) for ID 0: {vector[:10]}")
-            except RuntimeError as e:
-                print(f"Could not reconstruct vector. This index type may not support it. Error: {e}")
-                print("The index still works for searching.")
+                vector = index.reconstruct(0)
+                print(f"Sample vector (first 10 dims) for internal row 0: {vector[:10]}")
+            except Exception as e:
+                print(f"Could not reconstruct vector. Error: {e}")
 
 
     except Exception as e:

@@ -560,6 +560,62 @@ margin: 20px auto;
       margin:
 8px 0;
     }
+
+    /* --- Autocomplete --- */
+    .autocomplete {
+      position: relative;
+    }
+
+    .autocomplete-list {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      z-index: 50;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 10px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+      max-height: 260px;
+      overflow: auto;
+      padding: 6px;
+      display: none;
+    }
+
+    .autocomplete-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #222;
+      font-size: 14px;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.active {
+      background: #f0f4ff;
+    }
+
+    .autocomplete-hint {
+      color: #777;
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+
+    .confidence {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-left: 10px;
+      border: 1px solid #e0e0e0;
+      background: #f8f9fa;
+      color: #333;
+    }
+
+    .confidence.high { background: #eafff0; border-color: #bde9c9; color: #1e7e34; }
+    .confidence.med  { background: #fff7e6; border-color: #ffe2a8; color: #8a5a00; }
+    .confidence.low  { background: #fff0f0; border-color: #ffc4c4; color: #9a1f1f; }
   </style>
   <script>
     /* Configuration */
@@ -1078,6 +1134,22 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
       }
     }
 
+    function scoreToPercent(score) {
+      if (typeof score !== 'number' || Number.isNaN(score)) return null;
+      // Cosine similarity for this model is typically in [-1, 1], but in practice mostly [0, 1]
+      const clamped = Math.max(-1, Math.min(1, score));
+      // Display as 0..100 "confidence" for users
+      const pct = Math.round(((clamped + 1) / 2) * 100);
+      return pct;
+    }
+
+    function confidenceClass(pct) {
+      if (pct === null) return '';
+      if (pct >= 75) return 'high';
+      if (pct >= 60) return 'med';
+      return 'low';
+    }
+
     /* Display search results */
     function displaySearchResults(data) {
       const resultsDiv = document.getElementById("searchResults");
@@ -1085,7 +1157,6 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
 
       const results = (data && Array.isArray(data.results)) ? data.results : [];
 
-      // If there are no matches, explicitly show 'No matches' and nothing else.
       if (!results || results.length === 0) {
         resultsDiv.innerHTML = `
           <div class="status">
@@ -1096,23 +1167,38 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
         return;
       }
 
-      const artifact = results[0];
-      let html = '<div style="margin-bottom: 20px;"><h3>🔍 Search Result - Verified Data</h3>';
-      html += '<p style="color: #666; margin-bottom: 20px;">Showing the best match from the verified database.</p>';
+      let html = '<div style="margin-bottom: 20px;"><h3>🔍 Search Results - Verified Data</h3>';
+      html += '<p style="color: #666; margin-bottom: 20px;">Showing the best matches from the verified database.</p>';
 
-      html += `
-        <div class="search-result">
-          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 250px;">
-              <h3>${artifact.name} <span class="badge badge-verified">Verified ✓</span></h3>
-              <p><strong>Description:</strong> ${artifact.description}</p>
-              <p><strong>Category:</strong> ${artifact.category}</p>
-              <p><strong>Location:</strong> ${artifact.location}</p>
-              <p class="citation">📚 <strong>Citation:</strong> ${artifact.citation || 'Database entry'}</p>
+      results.forEach((artifact, idx) => {
+        const pct = scoreToPercent(artifact.score);
+        const cls = confidenceClass(pct);
+        const conf = (pct === null) ? '' : `<span class="confidence ${cls}">Confidence: ${pct}%</span>`;
+
+        const imgs = Array.isArray(artifact.images) ? artifact.images : [];
+        const gallery = imgs.length
+          ? `
+            <div style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+              ${imgs.map(src => `<img src="${src}" alt="artifact image" style="width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #e0e0e0;" />`).join('')}
+            </div>
+          `
+          : '';
+
+        html += `
+          <div class="search-result">
+            <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 250px;">
+                <h3>${artifact.name} ${conf} <span class="badge badge-verified">Verified ✓</span></h3>
+                <p><strong>Description:</strong> ${artifact.description}</p>
+                <p><strong>Category:</strong> ${artifact.category}</p>
+                <p><strong>Location:</strong> ${artifact.location}</p>
+                <p class="citation">📚 <strong>Citation:</strong> ${artifact.citation || 'Database entry'}</p>
+                ${gallery}
+              </div>
             </div>
           </div>
-        </div>
-      `;
+        `;
+      });
 
       html += '</div>';
       resultsDiv.innerHTML = html;
@@ -1172,18 +1258,80 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
       }
       let html = '<ul style="list-style:none;padding:0;">';
       artifacts.forEach(artifact => {
+        const status = artifact.status || 'pending';
+        const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
         html += `<li style="margin-bottom:20px;padding:20px;border:1px solid #e0e0e0;border-radius:8px;background:#fafafa;">
           <h4>${artifact.name}</h4>
           <p><strong>${t.description}</strong> ${artifact.description}</p>
           <p><strong>${t.category}</strong> ${artifact.category}</p>
           <p><strong>${t.location}</strong> ${artifact.location}</p>
-          <p><strong>Status:</strong> <span class="badge ${artifact.status === 'approved' ? 'badge-approved' : artifact.status === 'rejected' ? 'badge-danger' : 'badge-pending'}">${artifact.status.charAt(0).toUpperCase() + artifact.status.slice(1)}</span></p>
-          ${artifact.status === 'rejected' && artifact.rejectionReason ? `<p style="color:#dc3545;"><strong>Reason:</strong> ${artifact.rejectionReason}</p>` : ''}
+          <p><strong>Status:</strong> <span class="badge ${status === 'approved' ? 'badge-approved' : status === 'rejected' ? 'badge-danger' : 'badge-pending'}">${statusLabel}</span></p>
+          ${status === 'rejected' && artifact.rejectionReason ? `<p style="color:#dc3545;"><strong>Reason:</strong> ${artifact.rejectionReason}</p>` : ''}
+          ${status === 'rejected' ? `
+            <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+              <button class="btn-primary" onclick="openEditRejectedModal(${artifact.id})">Edit & Resubmit</button>
+            </div>
+          ` : ''}
         </li>`;
       });
       html += '</ul>';
+
+      // Modal container (render once per refresh)
+      html += `
+        <div id="editRejectedModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999;">
+          <div style="max-width:700px; margin:6vh auto; background:#fff; border-radius:12px; padding:18px 18px 16px; box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+              <h3 style="margin:0;">Edit Rejected Submission</h3>
+              <button class="btn-danger" type="button" onclick="closeEditRejectedModal()" style="padding:8px 12px; width:auto;">Close</button>
+            </div>
+            <p style="margin:10px 0 16px; color:#666;">Fix the details and resubmit. Status will return to <strong>Pending</strong> for expert review.</p>
+
+            <form id="editRejectedForm" onsubmit="submitEditedRejected(event)">
+              <input type="hidden" id="editRejectedId" />
+              <div class="form-group">
+                <label for="editRejectedName">Artifact Name *</label>
+                <input type="text" id="editRejectedName" required />
+              </div>
+              <div class="form-group">
+                <label for="editRejectedDescription">Description *</label>
+                <textarea id="editRejectedDescription" rows="4" required></textarea>
+              </div>
+              <div class="form-group">
+                <label for="editRejectedCategory">Category *</label>
+                <select id="editRejectedCategory" required>
+                  <option value="">Select Category</option>
+                  <option value="Fossil">Fossil</option>
+                  <option value="Artifact">Artifact</option>
+                  <option value="Document">Document</option>
+                  <option value="Pottery">Pottery</option>
+                  <option value="Tool">Tool</option>
+                  <option value="Structure">Structure</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="editRejectedLocation">Location *</label>
+                <input type="text" id="editRejectedLocation" required />
+              </div>
+              <div class="form-group">
+                <label for="editRejectedImages">Upload Images (optional)</label>
+                <input type="file" id="editRejectedImages" multiple accept="image/*" />
+                <small style="color:#666;">You can upload new images for the resubmission.</small>
+              </div>
+
+              <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+                <button type="button" class="btn-danger" onclick="closeEditRejectedModal()" style="width:auto;">Cancel</button>
+                <button type="submit" class="btn-success" style="width:auto;">Save & Resubmit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
       listDiv.innerHTML = html;
     }
+
+    // NOTE: The modal must be rendered inside displayMySubmissions().
+    // Any stray global `html += ...` blocks below this function will break rendering.
 
     /* Approve Artifact */
     async function approveArtifact(id) {
@@ -1331,6 +1479,87 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
       }
     }
 
+    /* Edit and Resubmit Rejected Artifact Modal */
+    async function openEditRejectedModal(artifactId) {
+      try {
+        const res = await fetch(`${API_BASE}/artifacts/pending/${artifactId}`);
+        if (!res.ok) {
+          alert('Could not load the rejected artifact for editing.');
+          return;
+        }
+        const artifact = await res.json();
+
+        document.getElementById('editRejectedId').value = artifact.id;
+        document.getElementById('editRejectedName').value = artifact.name || '';
+        document.getElementById('editRejectedDescription').value = artifact.description || '';
+        document.getElementById('editRejectedCategory').value = artifact.category || '';
+        document.getElementById('editRejectedLocation').value = artifact.location || '';
+
+        // This prototype doesn't persist image metadata per artifact.
+        // Keep a friendly placeholder.
+        const imagesContainer = document.getElementById('editRejectedImagesContainer');
+        if (imagesContainer) {
+          imagesContainer.innerHTML = '<p style="color:#666;">Existing images are not tracked per artifact in this prototype. You can upload new images below.</p>';
+        }
+
+        document.getElementById('editRejectedModal').style.display = 'block';
+      } catch (e) {
+        console.error('Error loading rejected artifact:', e);
+        alert('Error loading rejected artifact.');
+      }
+    }
+
+    function closeEditRejectedModal() {
+      document.getElementById('editRejectedModal').style.display = 'none';
+      document.getElementById('editRejectedForm').reset();
+    }
+
+    /* Submit Edited Rejected Artifact */
+    async function submitEditedRejected(event) {
+      event.preventDefault();
+
+      const id = document.getElementById('editRejectedId').value;
+
+      // Use multipart/form-data so we can include optional images
+      const formData = new FormData();
+      formData.append('name', document.getElementById('editRejectedName').value);
+      formData.append('description', document.getElementById('editRejectedDescription').value);
+      formData.append('category', document.getElementById('editRejectedCategory').value);
+      formData.append('location', document.getElementById('editRejectedLocation').value);
+      formData.append('uploadedBy', currentUser?.name || '');
+
+      const imagesInput = document.getElementById('editRejectedImages');
+      if (imagesInput && imagesInput.files && imagesInput.files.length > 0) {
+        for (let i = 0; i < imagesInput.files.length; i++) {
+          formData.append('images', imagesInput.files[i]);
+        }
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/artifacts/${id}`, {
+          method: 'PUT',
+          body: formData
+        });
+
+        if (res.ok) {
+          closeEditRejectedModal();
+          alert('✓ Updated. Your submission is back to Pending for review.');
+          loadPendingArtifacts();
+          loadMySubmissions();
+        } else {
+          let msg = 'Error updating rejected artifact.';
+          try {
+            const data = await res.json();
+            if (data?.error) msg += `\n${data.error}`;
+          } catch (_) {}
+          alert(msg);
+        }
+      } catch (e) {
+        console.error('Error updating rejected artifact:', e);
+        alert('Error updating rejected artifact.');
+      }
+    }
+
     /* Initialize on Page Load */
     window.onload = function () {
       updateLanguage();
@@ -1363,6 +1592,183 @@ password: "demo123", name: "Dr. James Chen", license: "ARC-2024-002" },
         });
       }
     };
+
+    // --- Search suggestions (autocomplete) ---
+    let suggestController = null;
+    let suggestDebounce = null;
+    let activeSuggestIndex = -1;
+
+    function getSearchInputEl() {
+      return document.getElementById('searchInput');
+    }
+
+    function ensureSuggestionUI() {
+      const input = getSearchInputEl();
+      if (!input) return null;
+
+      // If already wrapped, do nothing
+      let wrapper = input.closest('.autocomplete');
+      if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'autocomplete';
+        input.parentNode.insertBefore(wrapper, input);
+        wrapper.appendChild(input);
+      }
+
+      let list = wrapper.querySelector('.autocomplete-list');
+      if (!list) {
+        list = document.createElement('div');
+        list.className = 'autocomplete-list';
+        list.id = 'searchSuggestList';
+        wrapper.appendChild(list);
+      }
+
+      return { wrapper, list, input };
+    }
+
+    function closeSuggestions() {
+      const ui = ensureSuggestionUI();
+      if (!ui) return;
+      ui.list.style.display = 'none';
+      ui.list.innerHTML = '';
+      activeSuggestIndex = -1;
+    }
+
+    function renderSuggestions(prefix, suggestions) {
+      const ui = ensureSuggestionUI();
+      if (!ui) return;
+
+      ui.list.innerHTML = '';
+      activeSuggestIndex = -1;
+
+      if (!suggestions || suggestions.length === 0) {
+        ui.list.style.display = 'none';
+        return;
+      }
+
+      const hint = document.createElement('div');
+      hint.className = 'autocomplete-hint';
+      hint.textContent = `Suggestions for "${prefix}"`; 
+      ui.list.appendChild(hint);
+
+      suggestions.forEach((s, idx) => {
+        const item = document.createElement('div');
+        item.className = 'autocomplete-item';
+        item.dataset.index = String(idx);
+        item.textContent = s.name;
+        item.addEventListener('mousedown', (e) => {
+          // mousedown so it fires before input blur
+          e.preventDefault();
+          ui.input.value = s.name;
+          closeSuggestions();
+          searchArtifacts();
+        });
+        ui.list.appendChild(item);
+      });
+
+      ui.list.style.display = 'block';
+    }
+
+    async function fetchSuggestions(prefix) {
+      // Cancel any in-flight request
+      try { suggestController?.abort(); } catch (_) {}
+      suggestController = new AbortController();
+
+      const url = `${API_BASE}/search/suggest?q=${encodeURIComponent(prefix)}&limit=10`;
+      const res = await fetch(url, { signal: suggestController.signal });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data.suggestions) ? data.suggestions : [];
+    }
+
+    function moveActiveSuggestion(delta) {
+      const ui = ensureSuggestionUI();
+      if (!ui) return;
+      const items = Array.from(ui.list.querySelectorAll('.autocomplete-item'));
+      if (items.length === 0) return;
+
+      activeSuggestIndex = Math.max(0, Math.min(items.length - 1, activeSuggestIndex + delta));
+      items.forEach((el, i) => el.classList.toggle('active', i === activeSuggestIndex));
+
+      const activeEl = items[activeSuggestIndex];
+      if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+    }
+
+    function acceptActiveSuggestion() {
+      const ui = ensureSuggestionUI();
+      if (!ui) return false;
+      const items = Array.from(ui.list.querySelectorAll('.autocomplete-item'));
+      if (items.length === 0) return false;
+      if (activeSuggestIndex < 0 || activeSuggestIndex >= items.length) return false;
+
+      const name = items[activeSuggestIndex].textContent;
+      if (!name) return false;
+      ui.input.value = name;
+      closeSuggestions();
+      searchArtifacts();
+      return true;
+    }
+
+    function attachAutocompleteHandlers() {
+      const ui = ensureSuggestionUI();
+      if (!ui) return;
+
+      ui.input.setAttribute('autocomplete', 'off');
+
+      ui.input.addEventListener('input', () => {
+        const prefix = ui.input.value.trim();
+
+        // Only trigger suggestions when user has typed at least 1 character
+        if (prefix.length < 1) {
+          closeSuggestions();
+          return;
+        }
+
+        clearTimeout(suggestDebounce);
+        suggestDebounce = setTimeout(async () => {
+          try {
+            const suggestions = await fetchSuggestions(prefix);
+            renderSuggestions(prefix, suggestions);
+          } catch (e) {
+            if (e && e.name === 'AbortError') return;
+            closeSuggestions();
+          }
+        }, 120);
+      });
+
+      ui.input.addEventListener('keydown', (e) => {
+        const ui2 = ensureSuggestionUI();
+        if (!ui2) return;
+
+        const isOpen = ui2.list.style.display === 'block';
+        if (!isOpen) return;
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          moveActiveSuggestion(+1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          moveActiveSuggestion(-1);
+        } else if (e.key === 'Enter') {
+          // If a suggestion is active, accept it; otherwise normal search
+          if (acceptActiveSuggestion()) {
+            e.preventDefault();
+          }
+        } else if (e.key === 'Escape') {
+          closeSuggestions();
+        }
+      });
+
+      ui.input.addEventListener('blur', () => {
+        // Delay so click selection can register
+        setTimeout(closeSuggestions, 150);
+      });
+    }
+
+    // Attach after DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      attachAutocompleteHandlers();
+    });
   </script>
 </head>
 <body>
