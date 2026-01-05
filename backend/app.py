@@ -105,12 +105,13 @@ def get_embedding_dim() -> int:
 
 EMBEDDING_DIM = 384  # kept for readability; validated at runtime
 # Minimum cosine similarity required to consider any match.
-MIN_SEARCH_SCORE = 0.35
+MIN_SEARCH_SCORE = 0.20
 # Only return results that meet the UI "confidence" requirement.
 # 75% confidence => score >= 0.5 using pct=((score+1)/2)*100
-MIN_RETURN_SCORE = 0.5
+MIN_RETURN_SCORE = 0.30
 # If the best match is not clearly better than the next one, treat it as noise.
-MIN_SCORE_GAP = 0.08
+# (Disabled by default: with small corpora this tends to suppress valid results.)
+MIN_SCORE_GAP = 0.0
 # Basic guardrail: don't attempt semantic search for very short queries.
 MIN_QUERY_CHARS = 3
 
@@ -211,6 +212,34 @@ def _image_filenames_from_row(images_value) -> list[str]:
     if isinstance(images_value, (list, tuple)):
         return [str(x).strip() for x in images_value if str(x).strip()]
     return [x.strip() for x in str(images_value).split(',') if x.strip()]
+
+# --- Lightweight Q&A intent (field questions) ---
+
+def _qa_intent(query: str):
+    """Detect simple field-specific questions.
+
+    Returns (field, entity_hint) or (None, None).
+    """
+    q = (query or '').strip().lower()
+    if not q:
+        return None, None
+
+    # Location questions
+    location_triggers = [
+        'where was', 'where is', 'where were', 'location of', 'found', 'discovered', 'excavated'
+    ]
+    if any(t in q for t in location_triggers):
+        return 'location', None
+
+    # Category questions
+    if 'what category' in q or 'category of' in q:
+        return 'category', None
+
+    # Date questions
+    if 'when' in q and ('found' in q or 'discovered' in q or 'dated' in q):
+        return 'date', None
+
+    return None, None
 
 # --- API Endpoints ---
 @app.route('/api/artifacts', methods=['POST'])
@@ -336,19 +365,82 @@ def search_text():
     if not query:
         return jsonify({'results': []})
 
+    # Lightweight Q&A mode: if user asks for a specific field, return a concise answer.
+    field, _ = _qa_intent(query)
+    if field == 'location':
+        conn = get_db()
+        c = conn.cursor()
+        # Try to find an artifact mentioned in the question by doing a LIKE on name.
+        escaped = query.replace('%', r'\%').replace('_', r'\_')
+        like = f"%{escaped}%"
+        c.execute(
+            """
+            SELECT id, name, location
+            FROM approved
+            WHERE lower(?) LIKE '%' || lower(name) || '%'
+               OR name LIKE ? ESCAPE '\\'
+            ORDER BY length(name) DESC
+            LIMIT 1
+            """,
+            (query, like),
+        )
+        row = c.fetchone()
+        conn.close()
+        if row:
+            return jsonify({
+                'answer': {
+                    'type': 'field',
+                    'field': 'location',
+                    'name': row['name'],
+                    'value': row['location']
+                },
+                'results': []
+            })
+        # If we can't detect which artifact, fall back to normal search results.
+
     # Exact match pass (case-insensitive) so short/new artifacts are searchable
     conn = get_db()
     c = conn.cursor()
+
     c.execute('SELECT * FROM approved WHERE lower(name)=lower(?) LIMIT 1', (query,))
     exact = c.fetchone()
-    conn.close()
     if exact:
+        conn.close()
         art = dict(exact)
-        # Convert stored filenames into URLs for the frontend
         imgs = (art.get('images') or '').split(',') if art.get('images') else []
         art['images'] = [f"/static/images/{i.strip()}" for i in imgs if i.strip()]
         art['score'] = 1.0
         return jsonify({'results': [art]})
+
+    # Fallback keyword search (helps partial names and small datasets)
+    escaped = query.replace('%', r'\\%').replace('_', r'\\_')
+    like = f"%{escaped}%"
+    c.execute(
+        """
+        SELECT * FROM approved
+        WHERE (name LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')
+        ORDER BY CASE
+          WHEN lower(name)=lower(?) THEN 0
+          WHEN name LIKE ? ESCAPE '\\' THEN 1
+          ELSE 2
+        END, name COLLATE NOCASE
+        LIMIT ?
+        """,
+        (like, like, query, f"{escaped}%", int(max(5, k))),
+    )
+    kw_rows = [dict(r) for r in c.fetchall()]
+    if kw_rows:
+        conn.close()
+        results = []
+        for art in kw_rows:
+            imgs = (art.get('images') or '').split(',') if art.get('images') else []
+            art['images'] = [f"/static/images/{i.strip()}" for i in imgs if i.strip()]
+            # Heuristic score for display; semantic score comes from FAISS.
+            art['score'] = 0.45
+            results.append(art)
+        return jsonify({'results': results})
+
+    conn.close()
 
     # Guardrail
     if len(query) < MIN_QUERY_CHARS:
@@ -366,7 +458,7 @@ def search_text():
     if best_score < MIN_SEARCH_SCORE:
         return jsonify({'results': []})
 
-    if scores.shape[1] >= 2:
+    if MIN_SCORE_GAP > 0 and scores.shape[1] >= 2:
         second_score = float(scores[0][1])
         if (best_score - second_score) < MIN_SCORE_GAP:
             return jsonify({'results': []})
@@ -374,7 +466,6 @@ def search_text():
     conn = get_db()
     c = conn.cursor()
 
-    # Only keep results at/above the requested confidence threshold
     found_pairs = []
     for j in range(ids.shape[1]):
         art_id = int(ids[0][j])
@@ -394,7 +485,6 @@ def search_text():
 
     id_to_artifact = {art['id']: art for art in artifacts}
 
-    # Attach similarity score to each returned artifact
     results = []
     for art_id, score in found_pairs:
         art = id_to_artifact.get(art_id)

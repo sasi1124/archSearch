@@ -1183,6 +1183,30 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
       const resultsDiv = document.getElementById("searchResults");
       resultsDiv.innerHTML = '';
 
+      // If backend returned a concise answer (Q&A mode), render an Answer card.
+      if (data && data.answer && data.answer.type === 'field') {
+        const a = data.answer;
+        const fieldLabel = (a.field || 'answer').toString().replace(/_/g, ' ');
+        const name = a.name ? String(a.name) : '';
+        const value = (a.value === null || typeof a.value === 'undefined' || String(a.value).trim() === '')
+          ? 'Unknown'
+          : String(a.value);
+
+        resultsDiv.innerHTML = `
+          <div style="margin-bottom: 20px;">
+            <h3>🧠 Answer</h3>
+            <div class="search-result" style="border-left: 6px solid #667eea;">
+              <h3 style="margin-top:0;">${name || 'Result'}</h3>
+              <p style="margin: 10px 0; font-size: 16px;">
+                <strong>${fieldLabel}:</strong> ${value}
+              </p>
+              <p style="color:#666; margin:0;">Asked: <em>${(data.query || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</em></p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
       const results = (data && Array.isArray(data.results)) ? data.results : [];
 
       if (!results || results.length === 0) {
