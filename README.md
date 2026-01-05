@@ -61,6 +61,43 @@ The index instantly points to the closest matches, which are the most relevant a
 
 ---
 
+## Project Workflow (Visualized)
+
+Here’s how information moves through the ArchSearch system.
+
+### Upload & Approval Workflow
+
+```mermaid
+graph TD
+    A[User uploads a new artifact] --> B{Backend Server};
+    B --> C[Saves info in 'pending' list<br>in the Database];
+    
+    subgraph Expert Review
+        D[Expert Reviewer checks the list] --> E{Backend Server};
+        E --> F[Shows pending artifacts];
+        D -- Approves an artifact --> G{Backend Server};
+    end
+
+    subgraph Approval Action
+      G -- 1. Creates a 'meaning vector' --> H[Adds vector to<br>FAISS Index];
+      G -- 2. Moves info to 'approved' list --> I[Database];
+    end
+```
+
+### Search Workflow
+
+```mermaid
+graph TD
+    A[User types a search] --> B{Backend Server};
+    B -- 1. Creates a 'meaning vector' for the search --> C[FAISS Index];
+    C -- 2. Finds the closest matching artifact IDs --> B;
+    B -- 3. Looks up details for those IDs --> D[Database];
+    D -- 4. Sends back the results --> B;
+    B -- 5. Shows results to the user --> A;
+```
+
+---
+
 ## How to Run This Project
 
 1.  **Make sure you have Python installed.**
