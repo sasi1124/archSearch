@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import faiss
 import numpy as np
+from werkzeug.utils import secure_filename
 
 # --- Config ---
 DB_PATH = os.path.join(os.path.dirname(__file__), 'archsearch.db')
@@ -16,8 +17,11 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # --- SQLite Setup ---
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
+    # Help avoid "database is locked" for concurrent reads/writes in dev
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA busy_timeout=30000;")
     return conn
 
 def init_db():
@@ -55,11 +59,17 @@ def init_db():
 FAISS_INDEX_PATH = os.path.join(os.path.dirname(__file__), 'artifact_vectors.index')
 EMBEDDING_DIM = 384  # e.g., for MiniLM
 
+def _new_index_with_ids():
+    """Create an index that supports storing explicit IDs."""
+    base = faiss.IndexFlatL2(EMBEDDING_DIM)
+    return faiss.IndexIDMap2(base)
+
+
 def get_faiss_index():
     if os.path.exists(FAISS_INDEX_PATH):
         return faiss.read_index(FAISS_INDEX_PATH)
     else:
-        return faiss.IndexFlatL2(EMBEDDING_DIM)
+        return _new_index_with_ids()
 
 def save_faiss_index(index):
     faiss.write_index(index, FAISS_INDEX_PATH)
@@ -117,15 +127,20 @@ def submit_artifact():
     image_filenames = []
     if 'images' in request.files:
         images = request.files.getlist('images')
+        upload_folder = os.path.join(os.path.dirname(__file__), 'data')
+        os.makedirs(upload_folder, exist_ok=True) # Ensure the upload folder exists
+
         for img in images:
-            filename = img.filename
-            save_path = os.path.join(os.path.dirname(__file__), '../data', filename)
-            img.save(save_path)
-            image_filenames.append(filename)
+            if img and img.filename:
+                filename = secure_filename(img.filename)
+                save_path = os.path.join(upload_folder, filename)
+                img.save(save_path)
+                image_filenames.append(filename)
+
     conn = get_db()
     c = conn.cursor()
-    c.execute('''INSERT INTO pending (name, description, category, location, uploadedBy, license, date, status, rejectionReason)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NULL)''',
+    c.execute('''INSERT INTO pending (name, description, category, location, uploadedBy, license, date)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)''',
               (name, description, category, location, uploadedBy, license, date))
     conn.commit()
     conn.close()
@@ -165,8 +180,13 @@ def approve_artifact(artifact_id):
               (row['name'], row['description'], row['category'], row['location'], row['uploadedBy'], row['license'], row['date'], 'Verified by Expert Panel'))
     new_id = c.lastrowid
 
-    # Add to FAISS index
+    # Add to FAISS index (must support add_with_ids)
     index = get_faiss_index()
+    if not isinstance(index, faiss.IndexIDMap) and not isinstance(index, faiss.IndexIDMap2):
+        # Upgrade old index-on-disk that doesn't support add_with_ids
+        upgraded = faiss.IndexIDMap2(index)
+        index = upgraded
+
     text_to_embed = f"{row['name']} {row['description']}"
     embedding = embed_text(text_to_embed)
     index.add_with_ids(np.array([embedding], dtype=np.float32), np.array([new_id], dtype=np.int64))
