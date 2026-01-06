@@ -939,6 +939,18 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
           approveTabEl.style.display = (user.username === 'expert') ? '' : 'none';
         }
 
+        // Expert reviewers should only see Discover + Approval Queue.
+        // Archaeologists can see Upload + My Submissions.
+        const uploadTabEl = document.querySelector('[data-tab="uploadTab"]');
+        const mySubsTabEl = document.querySelector('[data-tab="mySubmissionsTab"]');
+        if (user.username === 'expert') {
+          if (uploadTabEl) uploadTabEl.style.display = 'none';
+          if (mySubsTabEl) mySubsTabEl.style.display = 'none';
+        } else {
+          if (uploadTabEl) uploadTabEl.style.display = '';
+          if (mySubsTabEl) mySubsTabEl.style.display = '';
+        }
+
         loadApprovedArtifacts();
         switchTab('discoverTab'); // Go to discover tab after login
       } else {
@@ -956,9 +968,13 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
         document.getElementById("loginScreen").style.display = "flex";
         document.getElementById("loginForm").reset();
 
-        // Reset: hide Approval Queue tab until an expert logs in again
+        // Reset tabs visibility
         const approveTabEl = document.querySelector('[data-tab="approveTab"]');
         if (approveTabEl) approveTabEl.style.display = 'none';
+        const uploadTabEl = document.querySelector('[data-tab="uploadTab"]');
+        if (uploadTabEl) uploadTabEl.style.display = '';
+        const mySubsTabEl = document.querySelector('[data-tab="mySubmissionsTab"]');
+        if (mySubsTabEl) mySubsTabEl.style.display = '';
 
         switchTab("discoverTab");
       }
