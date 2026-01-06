@@ -928,6 +928,13 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
       if (user) {
         isLoggedIn = true;
         currentUser = user;
+
+        // Clear any stale Discover search state from a prior session
+        const searchInputEl = document.getElementById('searchInput');
+        if (searchInputEl) searchInputEl.value = '';
+        const resultsDiv = document.getElementById('searchResults');
+        if (resultsDiv) resultsDiv.innerHTML = '';
+
         document.getElementById("loginScreen").style.display = "none";
         document.getElementById("mainApp").style.display = "block";
         document.getElementById("userInfo").innerText = `${user.name} (License: ${user.license})`;
@@ -964,6 +971,13 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
       if (confirm("Are you sure you want to logout?")) {
         isLoggedIn = false;
         currentUser = null;
+
+        // Clear Discover search state so it won't persist if the user logs in again
+        const searchInputEl = document.getElementById('searchInput');
+        if (searchInputEl) searchInputEl.value = '';
+        const resultsDiv = document.getElementById('searchResults');
+        if (resultsDiv) resultsDiv.innerHTML = '';
+
         document.getElementById("mainApp").style.display = "none";
         document.getElementById("loginScreen").style.display = "flex";
         document.getElementById("loginForm").reset();

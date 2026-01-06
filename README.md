@@ -376,3 +376,63 @@ SELECT * FROM pending;
 **A:** It’s based on the Hamming distance between perceptual hashes, mapped to a 0–100 scale.
 
 ---
+
+## Roles & Permissions
+
+ArchSearch has two main user roles in the UI:
+
+- **Expert reviewer (`expert`)**
+  - Can access: **Discover Artifacts**, **Approval Queue**
+  - Cannot access: **Upload Artifacts**, **My Submissions**
+
+- **Licensed archaeologist (non-expert user)**
+  - Can access: **Discover Artifacts**, **Upload Artifacts**, **My Submissions**
+  - Cannot access: **Approval Queue**
+
+> Note: This is enforced in the frontend UI logic (tab visibility / tab access). For a production system, role enforcement should also be implemented server-side.
+
+---
+
+## Q&A Mode (Concise Answers)
+
+The text search endpoint supports a lightweight “Q&A” mode for common questions.
+
+Example:
+- `Where was Rosetta Stone found?`
+
+Instead of returning full artifact cards, the backend may return:
+
+```json
+{
+  "answer": {
+    "type": "field",
+    "field": "location",
+    "name": "Rosetta Stone",
+    "value": "Nile Delta, Egypt"
+  },
+  "results": []
+}
+```
+
+The frontend renders this as a clean **Answer** card.
+
+---
+
+## Approval Queue Review (Images)
+
+When a submission includes images, the **Approval Queue** displays thumbnail previews so expert reviewers can verify the artifact visually.
+
+Images are loaded from:
+- `backend/static/images/<filename>`
+
+---
+
+## Image Search Notes (Relevance)
+
+Image search uses perceptual hashes stored in `approved.image_hashes`.
+
+Current behavior:
+- returns **only the single best match**
+- only if confidence meets the minimum threshold (to avoid random matches)
+
+---
