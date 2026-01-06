@@ -1273,6 +1273,19 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
       pendingArtifacts.forEach(artifact => {
         const isPending = artifact.status === 'pending';
         const isRejected = artifact.status === 'rejected';
+
+        const imgCsv = artifact.images || '';
+        const imgs = (typeof imgCsv === 'string')
+          ? imgCsv.split(',').map(s => s.trim()).filter(Boolean)
+          : (Array.isArray(imgCsv) ? imgCsv : []);
+
+        const gallery = imgs.length
+          ? `
+            <div style="margin-top: 12px; display:flex; gap:10px; flex-wrap:wrap;">
+              ${imgs.map(fn => `<img src="/static/images/${fn}" alt="submitted image" style="width: 120px; height: 120px; object-fit: cover; border-radius: 10px; border: 1px solid #e0e0e0;" />`).join('')}
+            </div>
+          `
+          : '';
         
         html += `
           <div class="pending-item ${isRejected ? 'rejected-item' : ''}">
@@ -1283,6 +1296,7 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
                 <p><strong>${t.category}</strong> ${artifact.category}</p>
                 <p><strong>${t.location}</strong> ${artifact.location}</p>
                 <p><strong>${t.uploadedBy}</strong> ${artifact.uploadedBy} ${t.on} ${artifact.date}</p>
+                ${gallery}
                 ${isRejected && artifact.rejectionReason ? `<p style="color: #dc3545; margin-top: 10px;"><strong>${t.rejectionReason}</strong> ${artifact.rejectionReason}</p>` : ''}
               </div>
             </div>
