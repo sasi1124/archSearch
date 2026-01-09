@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 from sentence_transformers import SentenceTransformer
 
 from PIL import Image
-
+                    
 # --- Config ---
 DB_PATH = os.path.join(os.path.dirname(__file__), 'archsearch.db')
 
@@ -72,6 +72,8 @@ def init_db():
     _ensure_column('pending', 'image_hashes', 'TEXT')
     _ensure_column('pending', 'status', "TEXT")
     _ensure_column('pending', 'rejectionReason', 'TEXT')
+    _ensure_column('pending', 'original_description', 'TEXT')
+    _ensure_column('pending', 'ai_review_summary', 'TEXT')
 
     _ensure_column('approved', 'images', 'TEXT')
     _ensure_column('approved', 'image_hashes', 'TEXT')
@@ -241,6 +243,88 @@ def _qa_intent(query: str):
 
     return None, None
 
+
+def _enhance_description_local(name: str, description: str, category: str, location: str) -> str:
+    """Enhance a description without calling external services.
+
+    This is a deterministic, local 'AI-like' rewrite to improve clarity/structure.
+    If you later add a real LLM, swap this function implementation.
+    """
+    name = (name or '').strip()
+    description = (description or '').strip()
+    category = (category or '').strip()
+    location = (location or '').strip()
+
+    if not description:
+        return ''
+
+    import re
+    desc = re.sub(r"\s+", " ", description).strip()
+
+    parts = []
+    if name:
+        parts.append(f"{name} is a {category.lower() if category else 'verified artifact'}.")
+
+    if desc and desc[-1] not in '.!?':
+        desc += '.'
+    parts.append(desc)
+
+    if location:
+        parts.append(f"Location: {location}.")
+
+    parts.append("If available, include estimated period/date, material, dimensions, condition, and discovery context.")
+
+    return " ".join(parts)
+
+
+def _ai_reviewer_summary_local(name: str, description: str, category: str, location: str) -> str:
+    """Generate an expert-facing review summary (local, deterministic).
+
+    This is intentionally non-generative: it restructures and highlights gaps.
+    """
+    name = (name or '').strip()
+    description = (description or '').strip()
+    category = (category or '').strip()
+    location = (location or '').strip()
+
+    bullets = []
+    if name:
+        bullets.append(f"Artifact: {name}")
+    if category:
+        bullets.append(f"Category: {category}")
+    if location:
+        bullets.append(f"Reported location: {location}")
+
+    # Key observations / quality checks
+    if description:
+        short = 'Yes' if len(description) < 140 else 'No'
+        bullets.append(f"Description provided: Yes (short: {short})")
+    else:
+        bullets.append("Description provided: No")
+
+    missing = []
+    # Simple checklist
+    for label, val in (
+        ('material', None),
+        ('dimensions', None),
+        ('estimated date/period', None),
+        ('condition', None),
+        ('provenance/discovery context', None),
+    ):
+        missing.append(label)
+
+    # A compact summary paragraph for quick scanning
+    summary = description.strip() if description else ''
+    if summary and len(summary) > 320:
+        summary = summary[:317].rstrip() + '...'
+
+    out = "\n".join([f"• {b}" for b in bullets])
+    if summary:
+        out += f"\n\nSummary:\n{summary}"
+
+    out += "\n\nSuggested details to add (if known): " + ", ".join(missing) + "."
+    return out
+
 # --- API Endpoints ---
 @app.route('/api/artifacts', methods=['POST'])
 def submit_artifact():
@@ -252,6 +336,14 @@ def submit_artifact():
     uploadedBy = request.form.get('uploadedBy')
     license = request.form.get('license')
     date = request.form.get('date')
+
+    # Auto-enhance description for archaeologist submissions
+    original_description = description or ''
+    description = _enhance_description_local(name, original_description, category, location)
+
+    # Create an expert-facing review summary for the Approval Queue
+    ai_review_summary = _ai_reviewer_summary_local(name, description, category, location)
+
     # Handle images (save filenames for now)
     image_filenames = []
     if 'images' in request.files:
@@ -279,12 +371,12 @@ def submit_artifact():
 
     conn = get_db()
     c = conn.cursor()
-    c.execute('''INSERT INTO pending (name, description, category, location, uploadedBy, license, date, images, image_hashes)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-              (name, description, category, location, uploadedBy, license, date, ','.join(image_filenames), ','.join(image_hashes)))
+    c.execute('''INSERT INTO pending (name, description, original_description, ai_review_summary, category, location, uploadedBy, license, date, images, image_hashes)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+              (name, description, original_description, ai_review_summary, category, location, uploadedBy, license, date, ','.join(image_filenames), ','.join(image_hashes)))
     conn.commit()
     conn.close()
-    return jsonify({'success': True, 'images': image_filenames})
+    return jsonify({'success': True, 'images': image_filenames, 'enhancedDescription': description, 'aiReviewSummary': ai_review_summary})
 
 @app.route('/api/artifacts/pending', methods=['GET'])
 def get_pending():
@@ -292,6 +384,23 @@ def get_pending():
     c = conn.cursor()
     c.execute('SELECT * FROM pending')
     rows = [dict(row) for row in c.fetchall()]
+
+    # Backfill ai_review_summary for older pending rows (if any)
+    changed = False
+    for r in rows:
+        if not r.get('ai_review_summary'):
+            r['ai_review_summary'] = _ai_reviewer_summary_local(
+                r.get('name'), r.get('description'), r.get('category'), r.get('location')
+            )
+            try:
+                c.execute('UPDATE pending SET ai_review_summary=? WHERE id=?', (r['ai_review_summary'], r.get('id')))
+                changed = True
+            except Exception:
+                pass
+
+    if changed:
+        conn.commit()
+
     conn.close()
     return jsonify(rows)
 

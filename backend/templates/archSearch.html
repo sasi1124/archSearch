@@ -917,7 +917,7 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
     }
 
     /* Login Functionality */
-    function login(event) {
+    function handleLogin(event) {
       event.preventDefault();
       const username = document.getElementById("username").value;
       const password = document.getElementById("password").value;
@@ -1316,7 +1316,17 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
             </div>
           `
           : '';
-        
+
+        const aiSummary = (artifact.ai_review_summary || '').toString().trim();
+        const aiBlock = aiSummary
+          ? `
+            <div style="margin-top: 12px; background:#f0f4ff; padding:12px; border-radius:10px; border-left: 4px solid #667eea;">
+              <p style="margin:0 0 8px; font-weight:700;">🤖 AI Review Summary</p>
+              <pre style="margin:0; white-space:pre-wrap; font-family: inherit; color:#222;">${aiSummary.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
+            </div>
+          `
+          : '';
+
         html += `
           <div class="pending-item ${isRejected ? 'rejected-item' : ''}">
             <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 15px;">
@@ -1327,6 +1337,7 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
                 <p><strong>${t.location}</strong> ${artifact.location}</p>
                 <p><strong>${t.uploadedBy}</strong> ${artifact.uploadedBy} ${t.on} ${artifact.date}</p>
                 ${gallery}
+                ${aiBlock}
                 ${isRejected && artifact.rejectionReason ? `<p style="color: #dc3545; margin-top: 10px;"><strong>${t.rejectionReason}</strong> ${artifact.rejectionReason}</p>` : ''}
               </div>
             </div>
@@ -1493,24 +1504,33 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
     async function handleExcelUpload(event) {
       const file = event.target.files[0];
       if (!file) return;
-      
+
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: "array" });
-          const sheet = workbook.Sheets[workbook.SheetNames[0]];
-          const artifacts = XLSX.utils.sheet_to_json(sheet);
-          
-          // Send to backend
-          const response = await fetch(`${API_BASE}/artifacts/bulk`, {
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+          const artifacts = rows.map(r => ({
+            name: (r.Name || r.name || '').toString().trim(),
+            description: (r.Description || r.description || '').toString().trim(),
+            category: (r.Category || r.category || '').toString().trim(),
+            location: (r.Location || r.location || '').toString().trim(),
+            uploadedBy: (currentUser && currentUser.name) ? currentUser.name : 'Unknown'
+          })).filter(a => a.name && a.description && a.category && a.location);
+
+          if (artifacts.length === 0) {
+            alert('No valid rows found. Required columns: Name, Description, Category, Location');
+            return;
+          }
+
+          const response = await fetch(`${API_BASE}/bulk-upload`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              artifacts,
-              uploadedBy: currentUser.name,
-              license: currentUser.license
-            })
+            body: JSON.stringify({ artifacts })
           });
 
           if (response.ok) {
@@ -1521,6 +1541,7 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
             alert("Error importing artifacts");
           }
         } catch (error) {
+          console.error('Excel upload error:', error);
           alert("Error reading Excel file. Please check the format.");
         }
       };
@@ -1894,7 +1915,7 @@ password: "password", name: "Dr. James Chen", license: "ARC-2024-002" },
       
       <div id="loginError" class="login-error"></div>
       
-      <form id="loginForm" onsubmit="login(event)">
+      <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group">
           <label for="username">Username</label>
           <input type="text" id="username" placeholder="Enter your username" required autocomplete="username">
